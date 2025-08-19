@@ -1,0 +1,31 @@
+{
+  "name": "memetee-vercel",
+  "version": "1.0.0",
+  "description": "AI-powered meme t-shirt generator for Vercel",
+  "main": "index.html",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Static site - no build needed'",
+    "deploy": "vercel --prod"
+  },
+  "dependencies": {
+    "openai": "^4.20.1",
+    "replicate": "^0.22.0",
+    "nodemailer": "^6.9.8"
+  },
+  "devDependencies": {
+    "@vercel/node": "^3.0.0"
+  },
+  "keywords": [
+    "meme",
+    "tshirt",
+    "ai",
+    "openai",
+    "dalle",
+    "replicate",
+    "vercel",
+    "serverless"
+  ],
+  "author": "MemeTee",
+  "license": "MIT"
+}

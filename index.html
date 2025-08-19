@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemeTee - Turn Your Photos into Meme T-Shirts</title>
+    <meta name="description" content="Upload any photo, let AI transform it into a hilarious meme, and get it printed on a premium t-shirt. Coming soon!">
+    
+    <!-- External Dependencies -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    
+    <!-- Local Configuration -->
+    <script src="config.js"></script>
+    
+    <!-- Local Styles -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="floating-elements">
+        <span class="floating-emoji" style="top: 10%; left: 10%;">😂</span>
+        <span class="floating-emoji" style="top: 20%; right: 15%;">🤣</span>
+        <span class="floating-emoji" style="top: 60%; left: 5%;">😎</span>
+        <span class="floating-emoji" style="bottom: 20%; right: 10%;">🔥</span>
+        <span class="floating-emoji" style="bottom: 40%; left: 20%;">💯</span>
+    </div>
+
+    <header>
+        <nav class="container">
+            <div class="logo">MemeTee</div>
+            <ul class="nav-links">
+                <li><a href="#how-it-works">How it Works</a></li>
+                <li><a href="#features">Features</a></li>
+                <li><a href="#pricing">Pricing</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Turn Your Photos Into<br>Epic Meme T-Shirts</h1>
+                <p>Upload any photo, let AI transform it into a hilarious meme, and see how awesome it would look on a t-shirt!</p>
+                
+                <div class="upload-section">
+                    <div class="upload-area" id="upload-area">
+                        <span class="upload-icon">📸</span>
+                        <div class="upload-text">Drop your photo here or click to browse</div>
+                        <div class="upload-subtext">JPG, PNG, or GIF up to 10MB</div>
+                        <input type="file" id="file-input" accept="image/*">
+                    </div>
+                    
+                    <div class="loading" id="loading">
+                        <div class="spinner"></div>
+                        <div id="loading-text">AI is creating your meme masterpiece...</div>
+                        <div class="loading-steps">
+                            <div class="step" id="step-1">✓ Analyzing your photo</div>
+                            <div class="step" id="step-2">⏳ Generating meme design</div>
+                            <div class="step" id="step-3">⏳ Creating t-shirt mockup</div>
+                        </div>
+                    </div>
+                    
+                    <div class="preview-section" id="preview-section">
+                        <h3 style="color: white; margin-bottom: 20px;">Your Original Photo</h3>
+                        <img id="original-preview" class="image-preview">
+                        
+                        <div class="ai-results">
+                            <div class="result-card">
+                                <h4>AI Generated Meme</h4>
+                                <div class="meme-container">
+                                    <img id="meme-image" class="result-image" style="display: none;">
+                                    <div id="meme-placeholder" class="result-placeholder">
+                                        <div class="placeholder-icon">🎨</div>
+                                        <p>Your meme will appear here</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="result-card">
+                                <h4>AI Generated T-Shirt Preview</h4>
+                                <div class="tshirt-container">
+                                    <img id="tshirt-mockup" class="result-image" style="display: none;">
+                                    <div id="tshirt-placeholder" class="result-placeholder">
+                                        <div class="placeholder-icon">👕</div>
+                                        <p>T-shirt preview will appear here</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-large" id="order-btn" style="display: none;" onclick="showPayment()">
+                            Get This T-Shirt - Coming Soon! 🚧
+                        </button>
+                    </div>
+                    
+                    <div class="payment-section" id="payment-section">
+                        <h3 style="color: white; margin-bottom: 30px;">🚧 Coming Soon!</h3>
+                        <div style="background: rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; text-align: center; color: white;">
+                            <h4 style="color: #667eea; margin-bottom: 20px;">Your Design is Ready!</h4>
+                            <p style="margin-bottom: 25px; line-height: 1.6;">
+                                We're putting the finishing touches on our ordering system. 
+                                Soon you'll be able to order your custom meme t-shirt with just a few clicks!
+                            </p>
+                            
+                            <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; margin: 20px 0;">
+                                <h5 style="color: #ff6b6b; margin-bottom: 15px;">What's Coming:</h5>
+                                <ul style="list-style: none; padding: 0; color: rgba(255,255,255,0.9);">
+                                    <li style="margin: 8px 0;">✅ Secure payment processing</li>
+                                    <li style="margin: 8px 0;">📦 Print-on-demand fulfillment</li>
+                                    <li style="margin: 8px 0;">🚚 Worldwide shipping</li>
+                                    <li style="margin: 8px 0;">📧 Order tracking & updates</li>
+                                </ul>
+                            </div>
+                            
+                            <form id="payment-form">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                                    <select id="size" style="padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: white;">
+                                        <option value="S">Small</option>
+                                        <option value="M" selected>Medium</option>
+                                        <option value="L">Large</option>
+                                        <option value="XL">X-Large</option>
+                                        <option value="XXL">XX-Large</option>
+                                    </select>
+                                    
+                                    <select id="color" style="padding: 12px; border-radius: 8px; border: 1px solid #ccc; background: white;">
+                                        <option value="black">Black</option>
+                                        <option value="white" selected>White</option>
+                                        <option value="navy">Navy</option>
+                                        <option value="gray">Gray</option>
+                                    </select>
+                                </div>
+                                
+                                <button type="submit" class="btn btn-large" id="submit-payment" style="background: linear-gradient(45deg, #667eea, #764ba2); border: none; color: white;">
+                                    Notify Me When Available - $24.99
+                                </button>
+                            </form>
+                            
+                            <p style="margin-top: 20px; font-size: 14px; color: rgba(255,255,255,0.7);">
+                                Want to be notified when ordering is available? Use the contact form below!
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="features">
+            <div class="container">
+                <div class="feature-card">
+                    <span class="feature-icon">🤖</span>
+                    <h3>AI-Powered Memes</h3>
+                    <p>Our advanced AI analyzes your photo and creates the perfect meme with clever captions and effects.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">👕</span>
+                    <h3>Realistic T-Shirt Preview</h3>
+                    <p>See exactly how your meme will look on the t-shirt with our AI-generated realistic mockups.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🚚</span>
+                    <h3>Fast Delivery</h3>
+                    <p>Your custom meme t-shirt will ship within 2-3 business days and arrive at your door.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">💯</span>
+                    <h3>Satisfaction Guaranteed</h3>
+                    <p>Not happy with your meme? We'll remake it or refund your money. No questions asked.</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="pricing" class="pricing">
+            <div class="container">
+                <div class="price">$24.99</div>
+                <div class="price-subtext">Per custom meme t-shirt (Coming Soon!)</div>
+                <ul style="list-style: none; color: rgba(255,255,255,0.9); margin-bottom: 30px; line-height: 2;">
+                    <li>✓ AI-generated meme design</li>
+                    <li>✓ AI-generated t-shirt preview</li>
+                    <li>✓ Premium cotton t-shirt</li>
+                    <li>✓ Free shipping in the US</li>
+                    <li>✓ Satisfaction guarantee</li>
+                </ul>
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; margin-top: 20px;">
+                    <p style="color: #667eea; margin: 0; font-weight: 600;">🚧 Ordering system launching soon!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Box -->
+        <section id="contact" class="contact-section">
+            <div class="container">
+                <div class="contact-box">
+                    <h3>Get Notified When We Launch!</h3>
+                    <p>Want to be the first to order your AI-generated meme t-shirt? Drop us a message!</p>
+                    
+                    <div class="contact-methods">
+                        <div class="contact-item">
+                            <span class="contact-icon">📧</span>
+                            <div>
+                                <strong>Email us</strong>
+                                <p>hello@memetee.com</p>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-item">
+                            <span class="contact-icon">📞</span>
+                            <div>
+                                <strong>Call us</strong>
+                                <p>(555) 123-MEME</p>
+                            </div>
+                        </div>
+                        
+                        <div class="contact-item">
+                            <span class="contact-icon">💬</span>
+                            <div>
+                                <strong>Questions?</strong>
+                                <p>We'd love to hear from you!</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form class="contact-form" id="contact-form">
+                        <input type="text" placeholder="Your Name" required>
+                        <input type="email" placeholder="Your Email" required>
+                        <textarea placeholder="Your Message (or just say 'notify me when available!')" rows="3" required></textarea>
+                        <button type="submit" class="btn">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 MemeTee. Making the world funnier, one t-shirt at a time.</p>
+            <div class="footer-links">
+                <a href="#privacy">Privacy Policy</a>
+                <a href="#terms">Terms of Service</a>
+                <a href="#returns">Returns</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Local JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
