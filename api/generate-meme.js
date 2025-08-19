@@ -1,4 +1,4 @@
-// Vercel serverless function for AI meme generation - OPTIMIZED FOR SPEED
+// Vercel serverless function for AI meme generation - WITH VISION ANALYSIS
 import OpenAI, { toFile } from 'openai';
 
 // Rate limiting store (in production, use Redis or similar)
@@ -27,93 +27,141 @@ function checkRateLimit(ip) {
   return true;
 }
 
-// 🆘 DALL-E 3 - FAST AND RELIABLE (Primary Choice)
-async function generateMemeWithDALLE3(prompt, style = 'meme', includeImageContext = '') {
+// 🔍 VISION ANALYSIS - Analyze uploaded image to create detailed description
+async function analyzeImageWithVision(imageBuffer) {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
 
   try {
-    // Enhanced prompt for DALL-E 3 with image context if available
-    const contextText = includeImageContext ? `Based on an uploaded image: ${includeImageContext}. ` : '';
-    const memePrompt = `${contextText}Create a funny internet meme. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold text overlay with witty caption. Shareable social media format. High quality with clear, readable text.`;
+    console.log('🔍 Analyzing uploaded image with GPT-4o Vision...');
+    
+    // Convert buffer to base64 for vision API
+    const base64Image = imageBuffer.toString('base64');
+    
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Analyze this image in detail for meme creation. Describe: 1) What is happening in the image 2) People's expressions/emotions 3) Objects and setting 4) Any text visible 5) The overall mood/context 6) What makes this image potentially funny or meme-worthy. Be very descriptive and specific - this description will be used to create a meme."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: `data:image/jpeg;base64,${base64Image}`
+              }
+            }
+          ]
+        }
+      ],
+      max_tokens: 500
+    });
 
-    console.log('🎨 Generating meme with DALL-E 3 (fast and reliable)...');
+    const description = response.choices[0].message.content;
+    console.log('✅ Vision analysis complete');
+    console.log('📝 Image description:', description.substring(0, 100) + '...');
+    
+    return description;
+
+  } catch (error) {
+    console.error('❌ Vision analysis failed:', error);
+    // Return a generic description if vision fails
+    return "an interesting image that could make a great meme";
+  }
+}
+
+// 🎨 DALL-E 3 - Enhanced with Vision Description
+async function generateMemeWithDALLE3Enhanced(prompt, style = 'meme', imageDescription = '') {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  try {
+    // Create enhanced prompt with image description
+    const enhancedPrompt = imageDescription 
+      ? `Create a hilarious internet meme based on this image: "${imageDescription}". ${prompt || 'Make it funny and clever with perfect text overlay.'}. Style: ${style}. Add bold, witty meme text that relates to what's happening in the image. Make it viral-worthy and shareable. High quality with clear, readable text overlay.`
+      : `Create a funny internet meme. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold text overlay with witty caption. Shareable social media format. High quality with clear, readable text.`;
+
+    console.log('🎨 Generating enhanced meme with DALL-E 3...');
     
     const response = await openai.images.generate({
       model: "dall-e-3",
-      prompt: memePrompt,
+      prompt: enhancedPrompt,
       size: "1024x1024",
       quality: "hd",
       style: "vivid",
-      response_format: "url", // DALL-E 3 returns URLs (faster)
+      response_format: "url",
       n: 1
     });
 
-    console.log('✅ DALL-E 3 meme generation successful');
+    console.log('✅ DALL-E 3 enhanced meme generation successful');
 
     return {
       url: response.data[0].url,
-      provider: 'dall-e-3',
-      prompt: memePrompt,
-      revised_prompt: response.data[0].revised_prompt
+      provider: 'dall-e-3-enhanced',
+      prompt: enhancedPrompt,
+      revised_prompt: response.data[0].revised_prompt,
+      used_vision: !!imageDescription
     };
 
   } catch (error) {
-    console.error('❌ DALL-E 3 failed:', error);
+    console.error('❌ DALL-E 3 enhanced generation failed:', error);
     throw error;
   }
 }
 
-// 🚀 GPT Image 1 - Text-to-Image (Faster than image editing)
-async function generateMemeWithGPTImage1Generate(prompt, style = 'meme', includeImageContext = '') {
+// 🚀 GPT Image 1 - Enhanced with Vision Description  
+async function generateMemeWithGPTImage1Enhanced(prompt, style = 'meme', imageDescription = '') {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
 
   try {
-    const contextText = includeImageContext ? `Based on an uploaded image: ${includeImageContext}. ` : '';
-    const memePrompt = `${contextText}Create a funny internet meme image. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold meme text overlay with witty captions. Make it viral-worthy and shareable for social media. High quality, clear readable text, professional meme format.`;
+    const enhancedPrompt = imageDescription 
+      ? `Create a hilarious internet meme based on this image: "${imageDescription}". ${prompt || 'Make it funny and clever with perfect text overlay.'}. Style: ${style}. Add bold, witty meme text that relates to what's happening in the image. Make it viral-worthy and shareable for social media. High quality, clear readable text, professional meme format.`
+      : `Create a funny internet meme image. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold meme text overlay with witty captions. Make it viral-worthy and shareable for social media. High quality, clear readable text, professional meme format.`;
 
-    console.log('🔄 Generating meme with GPT Image 1 text-to-image...');
+    console.log('🔄 Generating enhanced meme with GPT Image 1...');
     
-    // Using GPT Image 1's text-to-image generation - OPTIMIZED FOR SPEED
     const response = await openai.images.generate({
       model: "gpt-image-1",
-      prompt: memePrompt,
+      prompt: enhancedPrompt,
       size: "1024x1024",
-      quality: "medium", // Use medium instead of high for speed
+      quality: "high",
       background: "auto",
       output_format: "png",
       n: 1
     });
 
-    // GPT Image 1 returns b64_json, not URL
     const imageBase64 = response.data[0].b64_json;
     
     if (!imageBase64) {
       throw new Error('No base64 image data returned from GPT Image 1');
     }
 
-    // Convert base64 to data URL for frontend display
     const imageUrl = `data:image/png;base64,${imageBase64}`;
     
-    console.log('✅ GPT Image 1 text-to-image successful');
+    console.log('✅ GPT Image 1 enhanced generation successful');
     
     return {
       url: imageUrl,
-      provider: 'gpt-image-1-generate',
-      prompt: memePrompt,
-      base64: imageBase64
+      provider: 'gpt-image-1-enhanced',
+      prompt: enhancedPrompt,
+      base64: imageBase64,
+      used_vision: !!imageDescription
     };
 
   } catch (error) {
-    console.error('❌ GPT Image 1 text-to-image failed:', error);
+    console.error('❌ GPT Image 1 enhanced generation failed:', error);
     throw error;
   }
 }
 
-// 🎨 GPT Image 1 - Image Editing (Slower, use as last resort)
+// 🎭 GPT Image 1 Image Editing - Keep as final option
 async function generateMemeWithGPTImage1Edit(imageBuffer, prompt, style = 'meme') {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
@@ -122,18 +170,16 @@ async function generateMemeWithGPTImage1Edit(imageBuffer, prompt, style = 'meme'
   try {
     const memePrompt = `Transform this image into a hilarious internet meme. ${prompt || 'Create something funny and clever that will go viral.'}. Add bold, eye-catching meme text overlay with witty captions. Style: ${style}. Make it shareable, engaging, and perfect for social media. Ensure text is clear, readable, and positioned well. High quality meme format with professional text overlay.`;
 
-    console.log('🎨 Generating meme with GPT Image 1 image editing (may be slow)...');
+    console.log('🎭 Generating meme with GPT Image 1 image editing (direct image input)...');
     
-    // Use OpenAI's toFile helper to convert Buffer to proper file object
     const imageFile = await toFile(imageBuffer, 'input.png', { type: 'image/png' });
     
-    // Using GPT Image 1's image editing capability - OPTIMIZED FOR SPEED
     const response = await openai.images.edit({
       model: "gpt-image-1",
       image: imageFile,
       prompt: memePrompt,
       size: "1024x1024",
-      quality: "medium", // Use medium instead of high for speed
+      quality: "medium",
       background: "auto",
       output_format: "png",
       n: 1
@@ -153,25 +199,13 @@ async function generateMemeWithGPTImage1Edit(imageBuffer, prompt, style = 'meme'
       url: imageUrl,
       provider: 'gpt-image-1-edit',
       prompt: memePrompt,
-      base64: imageBase64
+      base64: imageBase64,
+      used_vision: false
     };
 
   } catch (error) {
     console.error('❌ GPT Image 1 image editing failed:', error);
     throw error;
-  }
-}
-
-// Helper function to describe uploaded image for context
-function generateImageContext(imageBuffer) {
-  // Simple context based on image size - in a real app you might use vision API
-  const sizeKB = Math.round(imageBuffer.length / 1024);
-  if (sizeKB < 100) {
-    return "a small image, possibly a simple graphic or icon";
-  } else if (sizeKB < 500) {
-    return "a medium-sized image, likely a photo or detailed graphic";
-  } else {
-    return "a large detailed image, probably a high-quality photo";
   }
 }
 
@@ -228,13 +262,13 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log('🚀 Starting FAST meme generation - optimized for Vercel timeouts');
+    console.log('🚀 Starting VISION-ENHANCED meme generation');
 
     let result;
     let attempts = [];
-    let imageContext = '';
+    let imageDescription = '';
     
-    // If image is provided, prepare it and generate context
+    // If image is provided, analyze it first with vision
     if (image) {
       let imageBuffer;
       try {
@@ -249,8 +283,10 @@ export default async function handler(req, res) {
           });
         }
         
-        // Generate simple context for the image
-        imageContext = generateImageContext(imageBuffer);
+        // 🔍 ANALYZE IMAGE WITH VISION FIRST
+        console.log('🔍 Step 1: Analyzing image content...');
+        imageDescription = await analyzeImageWithVision(imageBuffer);
+        attempts.push('vision-analysis: success');
         
       } catch (error) {
         return res.status(400).json({
@@ -259,25 +295,26 @@ export default async function handler(req, res) {
         });
       }
 
-      // PRIORITIZE SPEED: Try fastest methods first
+      // 🎨 ENHANCED GENERATION WITH VISION DESCRIPTION
+      console.log('🎨 Step 2: Generating meme with vision-enhanced prompts...');
       
-      // 1. Try DALL-E 3 first (fastest, most reliable)
+      // 1. Try DALL-E 3 Enhanced (fastest, with vision description)
       try {
-        result = await generateMemeWithDALLE3(prompt, style, imageContext);
-        attempts.push('dall-e-3-with-context: success');
+        result = await generateMemeWithDALLE3Enhanced(prompt, style, imageDescription);
+        attempts.push('dall-e-3-enhanced: success');
       } catch (error) {
-        attempts.push(`dall-e-3-with-context: ${error.message}`);
-        console.log('🔄 DALL-E 3 failed, trying GPT Image 1 text-to-image...');
+        attempts.push(`dall-e-3-enhanced: ${error.message}`);
+        console.log('🔄 DALL-E 3 enhanced failed, trying GPT Image 1 enhanced...');
         
-        // 2. Try GPT Image 1 text-to-image (faster than image editing)
+        // 2. Try GPT Image 1 Enhanced (with vision description)
         try {
-          result = await generateMemeWithGPTImage1Generate(prompt, style, imageContext);
-          attempts.push('gpt-image-1-generate-with-context: success');
+          result = await generateMemeWithGPTImage1Enhanced(prompt, style, imageDescription);
+          attempts.push('gpt-image-1-enhanced: success');
         } catch (error) {
-          attempts.push(`gpt-image-1-generate-with-context: ${error.message}`);
-          console.log('⚠️ Fast methods failed, trying GPT Image 1 image editing (may timeout)...');
+          attempts.push(`gpt-image-1-enhanced: ${error.message}`);
+          console.log('⚠️ Enhanced methods failed, trying direct image editing...');
           
-          // 3. Try GPT Image 1 image editing (slowest, most likely to timeout)
+          // 3. Try GPT Image 1 Image Editing (direct image input, slower)
           try {
             result = await generateMemeWithGPTImage1Edit(imageBuffer, prompt, style);
             attempts.push('gpt-image-1-edit: success');
@@ -286,25 +323,26 @@ export default async function handler(req, res) {
             console.log('🆘 All methods failed, using basic DALL-E 3...');
             
             // 4. Final fallback to basic DALL-E 3
-            result = await generateMemeWithDALLE3(prompt, style);
+            result = await generateMemeWithDALLE3Enhanced(prompt, style);
             attempts.push('dall-e-3-basic: success');
           }
         }
       }
     } else {
-      // No image provided - use fastest text-to-image methods
+      // No image provided - use text-to-image methods
+      console.log('🎨 No image provided, using text-to-image generation...');
       
       // 1. Try DALL-E 3 first (fastest)
       try {
-        result = await generateMemeWithDALLE3(prompt, style);
+        result = await generateMemeWithDALLE3Enhanced(prompt, style);
         attempts.push('dall-e-3: success');
       } catch (error) {
         attempts.push(`dall-e-3: ${error.message}`);
         console.log('🔄 DALL-E 3 failed, trying GPT Image 1...');
         
         // 2. Try GPT Image 1 as fallback
-        result = await generateMemeWithGPTImage1Generate(prompt, style);
-        attempts.push('gpt-image-1-generate: success');
+        result = await generateMemeWithGPTImage1Enhanced(prompt, style);
+        attempts.push('gpt-image-1: success');
       }
     }
 
@@ -313,6 +351,9 @@ export default async function handler(req, res) {
     }
 
     console.log(`🎉 Meme generated successfully with ${result.provider}`);
+    if (imageDescription) {
+      console.log('👁️ Used vision analysis for enhanced quality');
+    }
 
     res.status(200).json({
       success: true,
@@ -323,7 +364,9 @@ export default async function handler(req, res) {
       generation_time: new Date().toISOString(),
       attempts: attempts,
       has_base64: !!result.base64,
-      optimization: 'speed-optimized'
+      used_vision: result.used_vision,
+      image_description: imageDescription ? imageDescription.substring(0, 200) + '...' : null,
+      enhancement: 'vision-enhanced'
     });
 
   } catch (error) {

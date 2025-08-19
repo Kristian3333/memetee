@@ -1,11 +1,11 @@
-// MemeTee Landing Page JavaScript - OPTIMIZED FOR TIMEOUTS
+// MemeTee Landing Page JavaScript - WITH VISION-ENHANCED MEME GENERATION
 
 // Configuration for Vercel deployment
 const CONFIG = {
     MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
     PRICE: 2299, // €22.99 in cents
     CURRENCY: 'EUR',
-    REQUEST_TIMEOUT: 25000, // 25 seconds (under Vercel's 30s limit)
+    REQUEST_TIMEOUT: 45000, // 45 seconds for vision analysis + generation
     API_ENDPOINTS: {
         generateMeme: '/api/generate-meme',
         generateTshirtMockup: '/api/generate-tshirt-mockup',
@@ -49,8 +49,9 @@ function init() {
         initializeAnimations();
         checkBackendHealth();
         
-        console.log('🚀 MemeTee initialized with timeout optimization');
-        console.log('⚡ Prioritizing DALL-E 3 for speed and reliability');
+        console.log('🚀 MemeTee initialized with Vision-Enhanced AI');
+        console.log('👁️ Using GPT-4o Vision for image analysis');
+        console.log('⚡ Smart generation with DALL-E 3 + GPT Image 1');
         console.log('💰 Pricing set to EUR for European market');
     } catch (error) {
         console.error('Error initializing app:', error);
@@ -66,10 +67,10 @@ async function checkBackendHealth() {
         console.log('🏥 Backend Health:', health);
         
         if (!health.services?.ai?.openai) {
-            console.warn('⚠️ OpenAI not configured. Meme generation will not work.');
+            console.warn('⚠️ OpenAI not configured. Vision-enhanced generation will not work.');
             showWarning('OpenAI API not configured. Please add OPENAI_API_KEY to environment variables.');
         } else {
-            console.log('✅ OpenAI services ready for meme generation!');
+            console.log('✅ OpenAI services ready for vision-enhanced meme generation!');
         }
     } catch (error) {
         console.error('❌ Backend not reachable:', error);
@@ -207,7 +208,7 @@ function handleFile(file) {
     generateAIContent(file);
 }
 
-// 🤖 AI GENERATION WITH TIMEOUT HANDLING
+// 🤖 VISION-ENHANCED AI GENERATION
 async function generateAIContent(file) {
     try {
         // Cancel any existing request
@@ -222,16 +223,16 @@ async function generateAIContent(file) {
         loading.style.display = 'block';
         resetLoadingSteps();
         
-        // Step 1: Analyzing photo
+        // Step 1: Vision Analysis (NEW!)
         updateLoadingStep(1, 'active');
-        loadingText.textContent = 'Analyzing your photo...';
-        await delay(800);
+        loadingText.textContent = '👁️ AI is analyzing your image with GPT-4o Vision...';
+        await delay(1500);
         updateLoadingStep(1, 'completed');
         
-        // Step 2: Generate meme with optimized approach
+        // Step 2: Enhanced Meme Generation
         updateLoadingStep(2, 'active');
-        loadingText.textContent = 'AI is creating your hilarious meme (optimized for speed)...';
-        await generateMemeWithOptimizedAI(file);
+        loadingText.textContent = '🎨 Creating hilarious meme with vision-enhanced AI...';
+        await generateVisionEnhancedMeme(file);
         updateLoadingStep(2, 'completed');
         
         // Step 3: Create t-shirt mockup (simple overlay)
@@ -245,14 +246,14 @@ async function generateAIContent(file) {
         showFinalResults();
         
     } catch (error) {
-        console.error('Error in AI generation:', error);
+        console.error('Error in vision-enhanced AI generation:', error);
         hideLoading();
         
         // Handle specific errors
         if (error.name === 'AbortError') {
             showError('Request was cancelled. Please try again.');
         } else if (error.message.includes('timeout') || error.message.includes('took too long')) {
-            showError('Generation took too long. Try uploading a smaller image or using a simpler description.');
+            showError('Vision analysis took too long. Try uploading a smaller, clearer image.');
         } else if (error.message.includes('quota') || error.message.includes('billing')) {
             showError('OpenAI API quota exceeded. Please check your billing or try again later.');
         } else if (error.message.includes('content policy') || error.message.includes('safety')) {
@@ -262,26 +263,26 @@ async function generateAIContent(file) {
         } else if (error.message.includes('verification')) {
             showError('OpenAI organization verification required. Please contact support.');
         } else {
-            showError('Sorry, there was an error generating your meme. Please try again with a different image.');
+            showError('Sorry, there was an error with vision analysis. Please try again with a different image.');
         }
     } finally {
         currentController = null;
     }
 }
 
-// 🎨 OPTIMIZED MEME GENERATION WITH TIMEOUT HANDLING
-async function generateMemeWithOptimizedAI(file) {
+// 🎨 VISION-ENHANCED MEME GENERATION
+async function generateVisionEnhancedMeme(file) {
     try {
-        console.log('🎨 Starting optimized meme generation...');
+        console.log('🎨 Starting vision-enhanced meme generation...');
         
         // Convert file to base64 for API
         const base64Data = uploadedImageData.split(',')[1]; // Remove data URL prefix
         
-        console.log('📤 Sending request to optimized meme API...');
+        console.log('📤 Sending image for vision analysis and meme generation...');
         
         // Create timeout promise
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Request timed out')), CONFIG.REQUEST_TIMEOUT);
+            setTimeout(() => reject(new Error('Vision analysis timed out')), CONFIG.REQUEST_TIMEOUT);
         });
         
         // Create API request promise
@@ -292,7 +293,7 @@ async function generateMemeWithOptimizedAI(file) {
             },
             body: JSON.stringify({
                 image: base64Data,
-                prompt: 'Create a funny, viral-worthy internet meme with clever humor and perfect text overlay',
+                prompt: 'Create a funny, viral-worthy internet meme that relates perfectly to what\'s happening in this image',
                 style: 'meme'
             }),
             signal: currentController.signal
@@ -305,8 +306,8 @@ async function generateMemeWithOptimizedAI(file) {
         
         if (!response.ok) {
             const error = await response.json();
-            console.error('API Error:', error);
-            throw new Error(error.error || 'Meme generation failed');
+            console.error('Vision API Error:', error);
+            throw new Error(error.error || 'Vision-enhanced meme generation failed');
         }
         
         const result = await response.json();
@@ -315,28 +316,39 @@ async function generateMemeWithOptimizedAI(file) {
             generatedMemeUrl = result.meme_url;
             showMeme(result.meme_url);
             
-            console.log('✅ Meme generated successfully with:', result.provider);
+            console.log('✅ Vision-enhanced meme generated successfully with:', result.provider);
+            console.log('👁️ Used vision analysis:', result.used_vision);
             console.log('🎯 Prompt used:', result.prompt_used);
             console.log('🔄 Attempts:', result.attempts);
             
+            if (result.image_description) {
+                console.log('📝 Vision saw:', result.image_description);
+            }
+            
             if (result.revised_prompt) {
-                console.log('🎭 OpenAI revised prompt:', result.revised_prompt);
+                console.log('🎭 AI revised prompt:', result.revised_prompt);
+            }
+            
+            // Show success message with vision info
+            if (result.used_vision) {
+                showSuccess('🎉 Vision-enhanced meme created! AI analyzed your image and created a perfectly relevant meme.');
             }
             
             // Track successful generation
             if (typeof gtag !== 'undefined') {
-                gtag('event', 'optimized_meme_generated', {
+                gtag('event', 'vision_enhanced_meme_generated', {
                     'event_category': 'AI',
                     'provider': result.provider,
-                    'optimization': result.optimization
+                    'used_vision': result.used_vision,
+                    'enhancement': result.enhancement
                 });
             }
         } else {
-            throw new Error('Invalid response from meme generation API');
+            throw new Error('Invalid response from vision-enhanced meme generation API');
         }
         
     } catch (error) {
-        console.error('❌ Optimized meme generation failed:', error);
+        console.error('❌ Vision-enhanced meme generation failed:', error);
         throw error;
     }
 }
@@ -506,7 +518,7 @@ function showFinalResults() {
     
     // Track successful AI generation completion
     if (typeof gtag !== 'undefined') {
-        gtag('event', 'ai_generation_complete', {
+        gtag('event', 'vision_enhanced_generation_complete', {
             'event_category': 'AI',
             'event_label': 'success'
         });
@@ -802,11 +814,13 @@ if (document.readyState === 'loading') {
 }
 
 // Console log to show functionality status
-console.log('🚀 MemeTee initialized with timeout optimization');
-console.log('⚡ Meme generation: Optimized for speed (DALL-E 3 prioritized)');
+console.log('🚀 MemeTee initialized with Vision-Enhanced AI');
+console.log('👁️ Vision Analysis: GPT-4o analyzes uploaded images');
+console.log('🎨 Meme generation: Enhanced prompts from vision analysis');
+console.log('⚡ Smart fallbacks: DALL-E 3 → GPT Image 1 → Direct editing');
 console.log('👕 T-shirt mockup: Simple template overlay (instant)');
 console.log('📧 Contact form: REAL email functionality');
 console.log('💰 Payments: Coming soon implementation');
-console.log('🎯 All API calls optimized for Vercel timeout limits');
+console.log('🎯 All processes optimized for quality and speed');
 console.log('🇪🇺 Pricing configured for European market (EUR)');
 console.log('💡 Add your OPENAI_API_KEY to Vercel environment variables!');

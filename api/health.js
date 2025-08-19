@@ -1,4 +1,4 @@
-// Vercel serverless function for health check - Updated for GPT Image 1
+// Vercel serverless function for health check - Updated for Vision-Enhanced Generation
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Credentials', true);
@@ -22,10 +22,25 @@ export default async function handler(req, res) {
     smtp: !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS)
   };
 
+  // Determine capabilities based on OpenAI availability
+  let capabilities = {
+    vision_analysis: false,
+    meme_generation: false,
+    image_editing: false
+  };
+
+  if (aiServices.openai) {
+    capabilities = {
+      vision_analysis: true, // GPT-4o Vision
+      meme_generation: true, // DALL-E 3 + GPT Image 1
+      image_editing: true // GPT Image 1 image editing
+    };
+  }
+
   // Determine primary AI service
   let primaryAI = 'none';
   if (aiServices.openai) {
-    primaryAI = 'openai-gpt-image-1';
+    primaryAI = 'openai-vision-enhanced';
   } else if (aiServices.replicate) {
     primaryAI = 'replicate-fallback';
   }
@@ -44,10 +59,18 @@ export default async function handler(req, res) {
     status: 'OK', 
     timestamp: new Date().toISOString(),
     environment: 'vercel',
+    capabilities: capabilities,
+    workflow: {
+      step_1: 'Vision Analysis (GPT-4o)',
+      step_2: 'Enhanced Meme Generation (DALL-E 3 / GPT Image 1)',
+      step_3: 'T-Shirt Mockup (Template Overlay)',
+      fallback_chain: 'DALL-E 3 Enhanced → GPT Image 1 Enhanced → GPT Image 1 Edit → Basic Generation'
+    },
     models: {
-      meme_generation: primaryAI === 'openai-gpt-image-1' ? 'GPT Image 1 (latest 2025)' : 'Not configured',
+      vision_analysis: capabilities.vision_analysis ? 'GPT-4o Vision' : 'Not available',
+      meme_generation: capabilities.meme_generation ? 'DALL-E 3 + GPT Image 1 (vision-enhanced)' : 'Not configured',
       tshirt_mockup: 'Template overlay (no AI needed)',
-      fallback_available: aiServices.replicate ? 'Yes' : 'No'
+      fallback_available: aiServices.replicate ? 'Yes (Replicate)' : 'No'
     },
     services: {
       ai: aiServices,
@@ -55,6 +78,12 @@ export default async function handler(req, res) {
       primary_ai: primaryAI,
       primary_email: primaryEmail
     },
-    version: '2.0.0-gpt-image-1'
+    features: {
+      vision_enhanced_generation: capabilities.vision_analysis && capabilities.meme_generation,
+      smart_fallbacks: true,
+      timeout_optimization: true,
+      template_based_mockups: true
+    },
+    version: '3.0.0-vision-enhanced'
   });
 }
