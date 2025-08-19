@@ -13,7 +13,6 @@ yarn-error.log*
 
 # Vercel
 .vercel
-.vercel.json.bak
 
 # Backend (not needed for Vercel deployment)
 backend/
@@ -41,3 +40,4 @@ logs
 *.backup
 *.bak
 *.old
+test-email.js

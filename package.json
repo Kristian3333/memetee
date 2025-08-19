@@ -4,9 +4,7 @@
   "description": "AI-powered meme t-shirt generator for Vercel",
   "main": "index.html",
   "scripts": {
-    "dev": "vercel dev",
-    "build": "echo 'Static site - no build needed'",
-    "deploy": "vercel --prod"
+    "dev": "vercel dev"
   },
   "dependencies": {
     "openai": "^4.20.1",
