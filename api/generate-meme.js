@@ -1,6 +1,5 @@
-// Vercel serverless function for AI meme generation - FIXED
+// Vercel serverless function for AI meme generation - UPDATED WITH GPT IMAGE 1
 import OpenAI from 'openai';
-import Replicate from 'replicate';
 
 // Rate limiting store (in production, use Redis or similar)
 const rateLimitStore = new Map();
@@ -28,16 +27,97 @@ function checkRateLimit(ip) {
   return true;
 }
 
-async function generateMemeWithOpenAI(imageBuffer, prompt, style = 'meme') {
+// 🚀 GPT Image 1 - OpenAI's Latest & Most Advanced Image Generation Model (2025)
+async function generateMemeWithGPTImage1(imageBuffer, prompt, style = 'meme') {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
 
   try {
-    // Create a detailed prompt for meme generation
-    const memePrompt = `Create a funny internet meme based on this image. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold text overlay with a witty caption. Make it suitable for social media sharing. High quality, clear text, internet meme format.`;
+    // Optimized prompt for GPT Image 1 - superior instruction following
+    const memePrompt = `Transform this image into a hilarious internet meme. ${prompt || 'Create something funny and clever that will go viral.'}. Add bold, eye-catching meme text overlay with witty captions. Style: ${style}. Make it shareable, engaging, and perfect for social media. Ensure text is clear, readable, and positioned well. High quality meme format with professional text overlay.`;
 
-    console.log('🎨 Generating meme with OpenAI DALL-E...');
+    console.log('🎨 Generating meme with GPT Image 1 (OpenAI\'s latest 2025 model)...');
+    
+    // Using GPT Image 1's image editing capability for image-to-image generation
+    const response = await openai.images.edit({
+      model: "gpt-image-1",
+      image: imageBuffer,
+      prompt: memePrompt,
+      size: "1024x1024",
+      response_format: "url",
+      n: 1
+    });
+
+    const imageUrl = response.data[0].url;
+    console.log('✅ GPT Image 1 meme generation successful');
+    
+    return {
+      url: imageUrl,
+      provider: 'gpt-image-1',
+      prompt: memePrompt,
+      revised_prompt: response.data[0].revised_prompt
+    };
+
+  } catch (error) {
+    console.error('❌ GPT Image 1 failed:', error);
+    
+    // If image editing fails, try text-to-image generation as fallback
+    if (error.message.includes('image') && !error.message.includes('quota')) {
+      console.log('🔄 Image editing failed, trying text-to-image generation...');
+      return await generateMemeWithGPTImage1TextOnly(prompt, style);
+    }
+    
+    throw error;
+  }
+}
+
+// 🔄 GPT Image 1 Text-to-Image Fallback
+async function generateMemeWithGPTImage1TextOnly(prompt, style = 'meme') {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  try {
+    const memePrompt = `Create a funny internet meme image. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold meme text overlay with witty captions. Make it viral-worthy and shareable for social media. High quality, clear readable text, professional meme format.`;
+
+    console.log('🔄 Generating meme with GPT Image 1 text-to-image (fallback)...');
+    
+    const response = await openai.images.generate({
+      model: "gpt-image-1",
+      prompt: memePrompt,
+      size: "1024x1024",
+      quality: "hd",
+      response_format: "url",
+      n: 1
+    });
+
+    const imageUrl = response.data[0].url;
+    console.log('✅ GPT Image 1 text-to-image fallback successful');
+    
+    return {
+      url: imageUrl,
+      provider: 'gpt-image-1-text',
+      prompt: memePrompt,
+      revised_prompt: response.data[0].revised_prompt
+    };
+
+  } catch (error) {
+    console.error('❌ GPT Image 1 text-to-image failed:', error);
+    throw error;
+  }
+}
+
+// 🆘 DALL-E 3 Legacy Fallback
+async function generateMemeWithDALLE3(prompt, style = 'meme') {
+  const openai = new OpenAI({
+    apiKey: process.env.OPENAI_API_KEY,
+  });
+
+  try {
+    const memePrompt = `Create a funny internet meme. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold text overlay with witty caption. Shareable social media format.`;
+
+    console.log('🆘 Using DALL-E 3 fallback...');
     
     const response = await openai.images.generate({
       model: "dall-e-3",
@@ -45,69 +125,19 @@ async function generateMemeWithOpenAI(imageBuffer, prompt, style = 'meme') {
       size: "1024x1024",
       quality: "hd",
       style: "vivid",
-      n: 1,
+      n: 1
     });
 
-    const imageUrl = response.data[0].url;
-    console.log('✅ OpenAI meme generation successful');
-    
     return {
-      url: imageUrl,
-      provider: 'openai',
+      url: response.data[0].url,
+      provider: 'dall-e-3-fallback',
       prompt: memePrompt,
       revised_prompt: response.data[0].revised_prompt
     };
 
   } catch (error) {
-    console.error('❌ OpenAI meme generation failed:', error);
-    throw new Error(`OpenAI generation failed: ${error.message}`);
-  }
-}
-
-async function generateMemeWithReplicate(imageBuffer, prompt, style = 'meme') {
-  const replicate = new Replicate({
-    auth: process.env.REPLICATE_API_TOKEN,
-  });
-
-  try {
-    // Convert image to base64 data URL
-    const base64Image = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
-    
-    const memePrompt = `Transform this image into a funny internet meme. ${prompt || 'Make it humorous and relatable.'}. Style: ${style}. Add meme text overlay. Make it shareable and engaging.`;
-
-    console.log('🎨 Generating meme with Replicate...');
-
-    // Using SDXL model for meme generation
-    const output = await replicate.run(
-      "stability-ai/sdxl:39ed52f2a78e934b3ba6e2a89f5b1c712de7dfea535525255b1aa35c5565e08b",
-      {
-        input: {
-          image: base64Image,
-          prompt: memePrompt,
-          negative_prompt: "blurry, low quality, distorted, nsfw, inappropriate",
-          num_outputs: 1,
-          guidance_scale: 7.5,
-          num_inference_steps: 20,
-          seed: Math.floor(Math.random() * 1000000)
-        }
-      }
-    );
-
-    if (!output || output.length === 0) {
-      throw new Error('No output generated from Replicate');
-    }
-
-    console.log('✅ Replicate meme generation successful');
-    
-    return {
-      url: output[0],
-      provider: 'replicate',
-      prompt: memePrompt
-    };
-
-  } catch (error) {
-    console.error('❌ Replicate meme generation failed:', error);
-    throw new Error(`Replicate generation failed: ${error.message}`);
+    console.error('❌ DALL-E 3 fallback failed:', error);
+    throw error;
   }
 }
 
@@ -140,24 +170,27 @@ export default async function handler(req, res) {
       });
     }
 
-    // Handle both JSON and form data
     const contentType = req.headers['content-type'] || '';
-    console.log('Content-Type:', contentType);
     
-    let image, prompt, style, provider;
+    let image, prompt, style;
     
-    // Handle JSON request (from our frontend)
     if (contentType.includes('application/json')) {
       const body = req.body;
       image = body.image;
       prompt = body.prompt;
       style = body.style || 'meme';
-      provider = body.provider || 'auto';
     } else {
-      // This was the original multipart handling - remove the strict requirement
       return res.status(400).json({
         success: false,
         error: 'Content type must be application/json'
+      });
+    }
+
+    if (!process.env.OPENAI_API_KEY) {
+      return res.status(503).json({
+        success: false,
+        error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to environment variables.',
+        code: 'SERVICE_UNAVAILABLE'
       });
     }
 
@@ -171,7 +204,6 @@ export default async function handler(req, res) {
     // Convert base64 to buffer
     let imageBuffer;
     try {
-      // Remove data URL prefix if present
       const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, '');
       imageBuffer = Buffer.from(base64Data, 'base64');
     } catch (error) {
@@ -189,20 +221,37 @@ export default async function handler(req, res) {
       });
     }
 
-    console.log(`🚀 Starting meme generation - Provider: ${provider}, Style: ${style}`);
+    console.log('🚀 Starting meme generation with GPT Image 1 (OpenAI\'s latest 2025 model)');
 
     let result;
+    let attempts = [];
     
-    // Choose AI provider based on preference and availability
-    if (provider === 'openai' || (provider === 'auto' && process.env.OPENAI_API_KEY)) {
-      result = await generateMemeWithOpenAI(imageBuffer, prompt, style);
-    } else if (provider === 'replicate' || (provider === 'auto' && process.env.REPLICATE_API_TOKEN)) {
-      result = await generateMemeWithReplicate(imageBuffer, prompt, style);
-    } else {
-      throw new Error('No AI service available. Please configure OpenAI or Replicate API keys.');
+    // Try GPT Image 1 image editing first (best quality, image-to-image)
+    try {
+      result = await generateMemeWithGPTImage1(imageBuffer, prompt, style);
+      attempts.push('gpt-image-1: success');
+    } catch (error) {
+      attempts.push(`gpt-image-1: ${error.message}`);
+      console.log('🔄 GPT Image 1 editing failed, trying text-to-image...');
+      
+      // Try GPT Image 1 text-to-image as fallback
+      try {
+        result = await generateMemeWithGPTImage1TextOnly(prompt, style);
+        attempts.push('gpt-image-1-text: success');
+      } catch (error) {
+        attempts.push(`gpt-image-1-text: ${error.message}`);
+        console.log('🆘 GPT Image 1 failed, using DALL-E 3 as final fallback...');
+        
+        // Final fallback to DALL-E 3
+        result = await generateMemeWithDALLE3(prompt, style);
+        attempts.push('dall-e-3: success');
+      }
     }
 
-    // Log successful generation
+    if (!result) {
+      throw new Error('All OpenAI models failed to generate meme');
+    }
+
     console.log(`🎉 Meme generated successfully with ${result.provider}`);
 
     res.status(200).json({
@@ -211,7 +260,8 @@ export default async function handler(req, res) {
       provider: result.provider,
       prompt_used: result.prompt,
       revised_prompt: result.revised_prompt,
-      generation_time: new Date().toISOString()
+      generation_time: new Date().toISOString(),
+      attempts: attempts
     });
 
   } catch (error) {
@@ -221,7 +271,7 @@ export default async function handler(req, res) {
     if (error.message.includes('quota') || error.message.includes('billing')) {
       res.status(402).json({
         success: false,
-        error: 'AI service quota exceeded. Please try again later or contact support.',
+        error: 'OpenAI API quota exceeded. Please check your billing or try again later.',
         code: 'QUOTA_EXCEEDED'
       });
     } else if (error.message.includes('content policy') || error.message.includes('safety')) {
@@ -229,6 +279,12 @@ export default async function handler(req, res) {
         success: false,
         error: 'Image content not suitable for meme generation. Please try a different image.',
         code: 'CONTENT_POLICY'
+      });
+    } else if (error.message.includes('not configured') || error.message.includes('API key')) {
+      res.status(503).json({
+        success: false,
+        error: 'OpenAI service not configured. Please add OPENAI_API_KEY to environment variables.',
+        code: 'SERVICE_UNAVAILABLE'
       });
     } else {
       res.status(500).json({

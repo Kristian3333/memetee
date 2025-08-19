@@ -1,4 +1,4 @@
-// MemeTee Landing Page JavaScript - VERCEL DEPLOYMENT VERSION (Belgium/Europe)
+// MemeTee Landing Page JavaScript - UPDATED WITH GPT IMAGE 1 & SIMPLE T-SHIRT OVERLAY
 
 // Configuration for Vercel deployment
 const CONFIG = {
@@ -47,8 +47,8 @@ function init() {
         initializeAnimations();
         checkBackendHealth();
         
-        console.log('🚀 MemeTee initialized for Vercel deployment (Belgium/Europe)');
-        console.log('🎯 API Endpoints configured for serverless functions');
+        console.log('🚀 MemeTee initialized with GPT Image 1 & Simple T-Shirt Overlay');
+        console.log('🎯 Using OpenAI\'s latest 2025 GPT Image 1 model for superior results');
         console.log('💰 Pricing set to EUR for European market');
     } catch (error) {
         console.error('Error initializing app:', error);
@@ -62,13 +62,12 @@ async function checkBackendHealth() {
         const health = await response.json();
         
         console.log('🏥 Backend Health:', health);
-        console.log('🤖 AI Services:', health.services);
         
-        if (!health.services?.ai?.openai && !health.services?.ai?.replicate) {
-            console.warn('⚠️ No AI services configured. Meme generation will not work.');
-            showWarning('AI services not configured. Please add API keys to environment variables.');
+        if (!health.services?.ai?.openai) {
+            console.warn('⚠️ OpenAI not configured. GPT Image 1 generation will not work.');
+            showWarning('OpenAI API not configured. Please add OPENAI_API_KEY to environment variables.');
         } else {
-            console.log('✅ AI services ready for meme generation!');
+            console.log('✅ OpenAI GPT Image 1 services ready for meme generation!');
         }
     } catch (error) {
         console.error('❌ Backend not reachable:', error);
@@ -206,7 +205,7 @@ function handleFile(file) {
     generateAIContent(file);
 }
 
-// 🤖 REAL AI GENERATION WITH VERCEL SERVERLESS FUNCTIONS
+// 🤖 AI GENERATION WITH GPT IMAGE 1 (OpenAI's Latest 2025 Model)
 async function generateAIContent(file) {
     try {
         // Show loading state
@@ -219,16 +218,16 @@ async function generateAIContent(file) {
         await delay(1000);
         updateLoadingStep(1, 'completed');
         
-        // Step 2: Generate meme with REAL AI
+        // Step 2: Generate meme with GPT Image 1
         updateLoadingStep(2, 'active');
-        loadingText.textContent = 'AI is creating your hilarious meme...';
-        await generateMemeWithRealAI(file);
+        loadingText.textContent = 'GPT Image 1 is creating your hilarious meme...';
+        await generateMemeWithGPTImage1AI(file);
         updateLoadingStep(2, 'completed');
         
-        // Step 3: Generate t-shirt mockup with REAL AI
+        // Step 3: Create t-shirt mockup (simple overlay)
         updateLoadingStep(3, 'active');
-        loadingText.textContent = 'AI is generating realistic t-shirt preview...';
-        await generateTshirtMockupWithRealAI();
+        loadingText.textContent = 'Creating realistic t-shirt preview...';
+        await generateTshirtMockupWithOverlay();
         updateLoadingStep(3, 'completed');
         
         // Show final results
@@ -241,28 +240,27 @@ async function generateAIContent(file) {
         
         // Handle specific AI errors
         if (error.message.includes('quota') || error.message.includes('billing')) {
-            showError('AI service quota exceeded. Please try again later or contact support.');
-        } else if (error.message.includes('content policy')) {
+            showError('OpenAI API quota exceeded. Please check your billing or try again later.');
+        } else if (error.message.includes('content policy') || error.message.includes('safety')) {
             showError('Image content not suitable for meme generation. Please try a different image.');
-        } else if (error.message.includes('not configured')) {
-            showError('AI services not configured. Please contact support.');
+        } else if (error.message.includes('not configured') || error.message.includes('API key')) {
+            showError('OpenAI API key not configured. Please contact support.');
         } else {
             showError('Sorry, there was an error generating your meme. Please try again.');
         }
     }
 }
 
-// 🎨 REAL MEME GENERATION WITH VERCEL API - FIXED
-async function generateMemeWithRealAI(file) {
+// 🎨 GPT IMAGE 1 MEME GENERATION (OpenAI's Latest 2025 Model)
+async function generateMemeWithGPTImage1AI(file) {
     try {
-        console.log('🎨 Starting REAL AI meme generation with Vercel...');
+        console.log('🎨 Starting GPT Image 1 meme generation (OpenAI\'s latest 2025 model)...');
         
         // Convert file to base64 for API
         const base64Data = uploadedImageData.split(',')[1]; // Remove data URL prefix
         
-        console.log('📤 Sending request to API...');
+        console.log('📤 Sending request to GPT Image 1 API...');
         
-        // REAL API CALL TO VERCEL SERVERLESS FUNCTION - FIXED CONTENT TYPE
         const response = await fetch(CONFIG.API_ENDPOINTS.generateMeme, {
             method: 'POST',
             headers: {
@@ -270,9 +268,8 @@ async function generateMemeWithRealAI(file) {
             },
             body: JSON.stringify({
                 image: base64Data,
-                prompt: 'Create a funny, clever internet meme from this image',
-                style: 'meme',
-                provider: 'auto'
+                prompt: 'Create a funny, viral-worthy internet meme from this image with clever humor and perfect text overlay',
+                style: 'meme'
             })
         });
         
@@ -292,10 +289,15 @@ async function generateMemeWithRealAI(file) {
             
             console.log('✅ Meme generated successfully with:', result.provider);
             console.log('🎯 Prompt used:', result.prompt_used);
+            console.log('🔄 Attempts:', result.attempts);
+            
+            if (result.revised_prompt) {
+                console.log('🎭 OpenAI revised prompt:', result.revised_prompt);
+            }
             
             // Track successful generation
             if (typeof gtag !== 'undefined') {
-                gtag('event', 'ai_meme_generated', {
+                gtag('event', 'gpt_image_1_meme_generated', {
                     'event_category': 'AI',
                     'provider': result.provider
                 });
@@ -305,21 +307,20 @@ async function generateMemeWithRealAI(file) {
         }
         
     } catch (error) {
-        console.error('❌ Meme generation failed:', error);
+        console.error('❌ GPT Image 1 meme generation failed:', error);
         throw error;
     }
 }
 
-// 👕 REAL T-SHIRT MOCKUP GENERATION WITH VERCEL API
-async function generateTshirtMockupWithRealAI() {
+// 👕 SIMPLE T-SHIRT MOCKUP WITH OVERLAY (NO AI NEEDED)
+async function generateTshirtMockupWithOverlay() {
     try {
         if (!generatedMemeUrl) {
             throw new Error('No meme URL available for t-shirt mockup');
         }
         
-        console.log('👕 Starting REAL AI t-shirt mockup generation...');
+        console.log('👕 Creating t-shirt mockup with simple overlay...');
         
-        // REAL API CALL TO VERCEL SERVERLESS FUNCTION
         const response = await fetch(CONFIG.API_ENDPOINTS.generateTshirtMockup, {
             method: 'POST',
             headers: {
@@ -339,16 +340,18 @@ async function generateTshirtMockupWithRealAI() {
         const result = await response.json();
         
         if (result.success && result.mockup_url) {
+            // Create composite t-shirt mockup
             generatedTshirtUrl = result.mockup_url;
-            showTshirtMockup(result.mockup_url);
+            showTshirtMockupWithOverlay(result.mockup_url, result.meme_overlay || generatedMemeUrl, result.overlay_position);
             
-            console.log('✅ T-shirt mockup generated successfully');
+            console.log('✅ T-shirt mockup created successfully (no AI needed)');
+            console.log('🎨 Using template-based approach:', result.provider);
             
             // Track successful generation
             if (typeof gtag !== 'undefined') {
-                gtag('event', 'ai_tshirt_generated', {
-                    'event_category': 'AI',
-                    'color': result.tshirt_color
+                gtag('event', 'tshirt_mockup_created', {
+                    'event_category': 'Design',
+                    'approach': 'template-overlay'
                 });
             }
         } else {
@@ -356,20 +359,12 @@ async function generateTshirtMockupWithRealAI() {
         }
         
     } catch (error) {
-        console.error('❌ T-shirt mockup generation failed:', error);
+        console.error('❌ T-shirt mockup creation failed:', error);
         
-        // For t-shirt mockup failures, we can continue with a fallback
-        console.log('🔄 Using fallback t-shirt mockup...');
+        // For t-shirt mockup failures, we can continue with a simple fallback
+        console.log('🔄 Using simple t-shirt template fallback...');
         showTshirtMockupFallback();
     }
-}
-
-// Fallback t-shirt mockup (simple placeholder)
-function showTshirtMockupFallback() {
-    // Use a placeholder t-shirt image
-    const fallbackUrl = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop&crop=center';
-    generatedTshirtUrl = fallbackUrl;
-    showTshirtMockup(fallbackUrl);
 }
 
 // Display generated meme
@@ -387,11 +382,37 @@ function showMeme(memeUrl) {
     });
 }
 
-// Display t-shirt mockup
-function showTshirtMockup(mockupUrl) {
-    tshirtMockup.src = mockupUrl;
+// 👕 Display t-shirt mockup with overlay
+function showTshirtMockupWithOverlay(tshirtTemplateUrl, memeOverlayUrl, overlayPosition) {
+    // Create a container for the composite mockup
+    const mockupContainer = tshirtMockup.parentNode;
+    mockupContainer.style.position = 'relative';
+    
+    // Set the base t-shirt image
+    tshirtMockup.src = tshirtTemplateUrl;
     tshirtMockup.style.display = 'block';
     tshirtPlaceholder.style.display = 'none';
+    
+    // Create overlay element for the meme
+    let memeOverlay = document.getElementById('meme-overlay');
+    if (!memeOverlay) {
+        memeOverlay = document.createElement('img');
+        memeOverlay.id = 'meme-overlay';
+        memeOverlay.style.position = 'absolute';
+        memeOverlay.style.zIndex = '10';
+        mockupContainer.appendChild(memeOverlay);
+    }
+    
+    // Set overlay properties
+    memeOverlay.src = memeOverlayUrl;
+    memeOverlay.style.top = overlayPosition?.top || '35%';
+    memeOverlay.style.left = overlayPosition?.left || '50%';
+    memeOverlay.style.width = overlayPosition?.width || '200px';
+    memeOverlay.style.height = overlayPosition?.height || '200px';
+    memeOverlay.style.transform = overlayPosition?.transform || 'translate(-50%, -50%)';
+    memeOverlay.style.objectFit = 'contain';
+    memeOverlay.style.borderRadius = '8px';
+    memeOverlay.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
     
     // Animate the mockup appearance
     gsap.from(tshirtMockup, {
@@ -401,6 +422,36 @@ function showTshirtMockup(mockupUrl) {
         delay: 0.2,
         ease: "back.out(1.7)"
     });
+    
+    gsap.from(memeOverlay, {
+        opacity: 0,
+        scale: 0.5,
+        duration: 0.6,
+        delay: 0.8,
+        ease: "back.out(1.7)"
+    });
+}
+
+// Fallback t-shirt mockup (simple template)
+function showTshirtMockupFallback() {
+    // Use a simple t-shirt template
+    const fallbackUrl = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop&crop=center';
+    generatedTshirtUrl = fallbackUrl;
+    
+    tshirtMockup.src = fallbackUrl;
+    tshirtMockup.style.display = 'block';
+    tshirtPlaceholder.style.display = 'none';
+    
+    // Animate the fallback appearance
+    gsap.from(tshirtMockup, {
+        opacity: 0,
+        scale: 0.8,
+        duration: 0.8,
+        delay: 0.2,
+        ease: "back.out(1.7)"
+    });
+    
+    console.log('📦 Using fallback t-shirt template');
 }
 
 // Show final results and order button
@@ -722,11 +773,11 @@ if (document.readyState === 'loading') {
 }
 
 // Console log to show functionality status
-console.log('🚀 MemeTee initialized for Vercel deployment (Belgium/Europe)');
+console.log('🚀 MemeTee initialized with GPT Image 1 & Simple T-Shirt Overlay');
+console.log('🎨 Meme generation: GPT Image 1 (OpenAI\'s latest 2025 model)');
+console.log('👕 T-shirt mockup: Simple template overlay (faster & more reliable)');
 console.log('📧 Contact form: REAL email functionality via serverless functions');
-console.log('🤖 AI meme generation: REAL AI integration via serverless functions');
-console.log('👕 AI t-shirt mockup: REAL AI integration via serverless functions');
 console.log('💰 Payments: Coming soon message implementation');
 console.log('🎯 All API calls routed to /api/* serverless functions');
 console.log('🇪🇺 Pricing configured for European market (EUR)');
-console.log('💡 Add your API keys to Vercel environment variables!');
+console.log('💡 Add your OPENAI_API_KEY to Vercel environment variables!');
