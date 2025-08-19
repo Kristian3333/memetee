@@ -1,4 +1,4 @@
-// MemeTee Landing Page JavaScript - ENHANCED FOR FUNNIER MEMES
+// MemeTee Landing Page JavaScript - FIXED DISPLAY ISSUES + ENHANCED ERROR HANDLING
 
 // Configuration for Vercel deployment
 const CONFIG = {
@@ -368,11 +368,11 @@ function resetResultsDisplay() {
             orderBtn.style.display = 'none';
         }
         
-        // Remove any existing overlay
-        const existingOverlay = document.getElementById('meme-overlay');
-        if (existingOverlay) {
-            existingOverlay.remove();
-            debugLog('Removed existing overlay');
+        // Remove any existing t-shirt overlay
+        const existingTshirtContainer = document.getElementById('tshirt-background-container');
+        if (existingTshirtContainer) {
+            existingTshirtContainer.remove();
+            debugLog('Removed existing t-shirt container');
         }
         
         // Reset stored URLs
@@ -506,6 +506,16 @@ async function generateImprovedMeme(file) {
         if (!response.ok) {
             const error = await response.json();
             errorLog('Improved Meme API Error:', error);
+            
+            // Handle enhanced error responses from backend
+            if (error.details?.type === 'safety_violation') {
+                showError(`🛡️ Content Safety Issue: ${error.error}\n\n💡 ${error.details.suggestion}`);
+            } else if (error.details?.rejected_prompt) {
+                showError(`❌ Generation Failed: ${error.error}\n\n🔄 Try uploading a different type of image.`);
+            } else {
+                showError(error.error || 'Improved meme generation failed');
+            }
+            
             throw new Error(error.error || 'Improved meme generation failed');
         }
         
@@ -516,9 +526,9 @@ async function generateImprovedMeme(file) {
             generatedMemeUrl = result.meme_url;
             debugLog(`💾 Stored meme URL: ${generatedMemeUrl}`);
             
-            // CRITICAL: Show the meme in the left container
-            debugLog('🖼️ Displaying improved meme in left container...');
-            await showMeme(result.meme_url);
+            // CRITICAL: Show the meme in BOTH containers
+            debugLog('🖼️ Displaying improved meme in BOTH containers...');
+            await showMemeInBothContainers(result.meme_url);
             
             successLog(`Funnier meme generated with ${result.provider}`);
             
@@ -533,6 +543,14 @@ async function generateImprovedMeme(file) {
                 console.groupEnd();
             }
             
+            if (result.safety_info?.had_safety_issue) {
+                console.group('🛡️ Safety Information:');
+                console.log('Original prompt was sanitized for safety compliance');
+                console.log('Rejected prompt:', result.safety_info.original_prompt_rejected);
+                console.groupEnd();
+                showSuccess('🛡️ Meme generated successfully! We automatically adjusted the content to meet safety guidelines.');
+            }
+            
             if (result.prompt_used) {
                 debugLog(`📝 Final prompt used: ${result.prompt_used.substring(0, 100)}...`);
             }
@@ -545,7 +563,7 @@ async function generateImprovedMeme(file) {
             debugLog(`✨ Enhancement type: ${result.enhancement}`);
             
             // Show success message
-            if (result.used_vision) {
+            if (result.used_vision && !result.safety_info?.had_safety_issue) {
                 showSuccess('🎉 Funnier meme created! GPT-4o analyzed your image and crafted the perfect prompt for maximum humor.');
             }
             
@@ -555,7 +573,8 @@ async function generateImprovedMeme(file) {
                     'event_category': 'AI',
                     'provider': result.provider,
                     'used_vision': result.used_vision,
-                    'enhancement': result.enhancement
+                    'enhancement': result.enhancement,
+                    'had_safety_issue': result.safety_info?.had_safety_issue || false
                 });
             }
         } else {
@@ -569,49 +588,19 @@ async function generateImprovedMeme(file) {
     }
 }
 
-// 👕 CREATE T-SHIRT MOCKUP WITH TEMPLATE OVERLAY
-async function generateTshirtMockupWithOverlay() {
-    try {
-        if (!generatedMemeUrl) {
-            throw new Error('No meme URL available for t-shirt mockup');
-        }
-        
-        debugLog('👕 Creating t-shirt mockup with template overlay...');
-        debugLog(`🎨 Using meme URL: ${generatedMemeUrl}`);
-        
-        // Use a high-quality white t-shirt template
-        const tshirtTemplateUrl = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=700&fit=crop&crop=center&q=90';
-        
-        // Show the t-shirt mockup with overlay
-        debugLog('👕 Displaying t-shirt with meme overlay...');
-        await showTshirtMockupWithOverlay(tshirtTemplateUrl, generatedMemeUrl, {
-            top: '40%',
-            left: '50%',
-            width: '140px',
-            height: '140px',
-            transform: 'translate(-50%, -50%)'
-        });
-        
-        successLog('T-shirt mockup created successfully');
-        
-        // Track successful generation
-        if (typeof gtag !== 'undefined') {
-            gtag('event', 'tshirt_mockup_created', {
-                'event_category': 'Design',
-                'approach': 'template-overlay'
-            });
-        }
-        
-    } catch (error) {
-        errorLog('T-shirt mockup creation failed', error);
-        
-        // For t-shirt mockup failures, we can continue with a simple fallback
-        debugLog('🔄 Using simple t-shirt template fallback...');
-        showTshirtMockupFallback();
-    }
+// 🖼️ SHOW MEME IN BOTH CONTAINERS - FIXED
+async function showMemeInBothContainers(memeUrl) {
+    debugLog('🖼️ === SHOWING MEME IN BOTH CONTAINERS ===');
+    debugLog(`🔗 Meme URL: ${memeUrl}`);
+    
+    // Show in left container (original meme display)
+    await showMeme(memeUrl);
+    
+    // Show in right container as t-shirt mockup
+    await showTshirtWithMemeOverlay(memeUrl);
 }
 
-// 🖼️ ENHANCED MEME DISPLAY FUNCTION - FIXED AND ROBUST
+// 🖼️ ENHANCED MEME DISPLAY FUNCTION - FOR LEFT CONTAINER
 function showMeme(memeUrl) {
     return new Promise((resolve, reject) => {
         debugLog('🖼️ === SHOWING MEME IN LEFT CONTAINER ===');
@@ -642,7 +631,7 @@ function showMeme(memeUrl) {
             
             // Set up event handlers BEFORE setting src
             const handleLoad = () => {
-                successLog('Improved meme image loaded successfully!');
+                successLog('Meme image loaded successfully in LEFT container!');
                 debugLog(`📏 Image dimensions: ${memeImage.naturalWidth} x ${memeImage.naturalHeight}`);
                 
                 // Animate the meme appearance if GSAP is available
@@ -663,7 +652,7 @@ function showMeme(memeUrl) {
             };
             
             const handleError = () => {
-                errorLog(`Failed to load improved meme image: ${memeUrl}`);
+                errorLog(`Failed to load meme image in LEFT container: ${memeUrl}`);
                 
                 // Reset to placeholder state
                 memePlaceholder.style.display = 'block';
@@ -685,13 +674,6 @@ function showMeme(memeUrl) {
             memeImage.src = memeUrl;
             debugLog(`✅ Set meme image src to: ${memeUrl}`);
             
-            // Timeout fallback
-            setTimeout(() => {
-                if (memeImage.src === memeUrl && !memeImage.complete) {
-                    debugLog('Meme loading timeout - may still be loading...', 'warning');
-                }
-            }, 10000);
-            
         } catch (error) {
             errorLog('Error in showMeme function', error);
             
@@ -706,141 +688,191 @@ function showMeme(memeUrl) {
     });
 }
 
-// 👕 ENHANCED T-SHIRT MOCKUP DISPLAY - FIXED AND ROBUST
-function showTshirtMockupWithOverlay(tshirtTemplateUrl, memeOverlayUrl, overlayPosition) {
+// 👕 CREATE T-SHIRT MOCKUP WITH PROPER T-SHIRT BACKGROUND
+async function showTshirtWithMemeOverlay(memeUrl) {
     return new Promise((resolve, reject) => {
         debugLog('👕 === CREATING T-SHIRT MOCKUP IN RIGHT CONTAINER ===');
-        debugLog(`👕 T-shirt template URL: ${tshirtTemplateUrl}`);
-        debugLog(`🎨 Meme overlay URL: ${memeOverlayUrl}`);
+        debugLog(`🎨 Meme URL: ${memeUrl}`);
         
         // Validate inputs
-        if (!tshirtMockup || !tshirtPlaceholder) {
-            const error = 'Required t-shirt display elements not found';
+        if (!tshirtPlaceholder) {
+            const error = 'Required t-shirt placeholder element not found';
             errorLog(error);
             reject(new Error(error));
             return;
         }
         
         try {
-            // Get the t-shirt container and set up positioning
-            const mockupContainer = tshirtMockup.parentNode;
-            if (mockupContainer) {
-                mockupContainer.style.position = 'relative';
-            }
-            
-            // Hide placeholder and show t-shirt
+            // Hide placeholder
             tshirtPlaceholder.style.display = 'none';
-            tshirtMockup.style.display = 'block';
             
-            // Clear previous src
-            tshirtMockup.src = '';
+            // Get the t-shirt container
+            const tshirtContainer = tshirtPlaceholder.parentNode;
             
-            // Set up t-shirt load handler
-            const handleTshirtLoad = () => {
-                successLog('T-shirt template loaded successfully!');
+            // Create t-shirt background container
+            const tshirtBgContainer = document.createElement('div');
+            tshirtBgContainer.id = 'tshirt-background-container';
+            tshirtBgContainer.style.cssText = `
+                position: relative;
+                width: 100%;
+                height: 250px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                background: linear-gradient(145deg, #f0f0f0, #ffffff);
+                border-radius: 15px;
+                overflow: hidden;
+            `;
+            
+            // Create t-shirt shape using CSS
+            const tshirtShape = document.createElement('div');
+            tshirtShape.style.cssText = `
+                position: relative;
+                width: 180px;
+                height: 220px;
+                background: white;
+                border-radius: 15px 15px 25px 25px;
+                box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+                border: 2px solid rgba(0,0,0,0.1);
+                overflow: hidden;
+            `;
+            
+            // Add t-shirt neckline
+            const neckline = document.createElement('div');
+            neckline.style.cssText = `
+                position: absolute;
+                top: -1px;
+                left: 50%;
+                transform: translateX(-50%);
+                width: 40px;
+                height: 20px;
+                background: white;
+                border-radius: 0 0 20px 20px;
+                border: 2px solid rgba(0,0,0,0.1);
+                border-top: none;
+            `;
+            
+            // Add sleeves
+            const leftSleeve = document.createElement('div');
+            leftSleeve.style.cssText = `
+                position: absolute;
+                top: 10px;
+                left: -15px;
+                width: 20px;
+                height: 60px;
+                background: white;
+                border-radius: 10px 0 0 15px;
+                border: 2px solid rgba(0,0,0,0.1);
+                border-right: none;
+            `;
+            
+            const rightSleeve = document.createElement('div');
+            rightSleeve.style.cssText = `
+                position: absolute;
+                top: 10px;
+                right: -15px;
+                width: 20px;
+                height: 60px;
+                background: white;
+                border-radius: 0 10px 15px 0;
+                border: 2px solid rgba(0,0,0,0.1);
+                border-left: none;
+            `;
+            
+            // Create meme overlay on t-shirt
+            const memeOverlay = document.createElement('img');
+            memeOverlay.style.cssText = `
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 120px;
+                height: 120px;
+                transform: translate(-50%, -50%);
+                object-fit: contain;
+                border-radius: 8px;
+                z-index: 10;
+            `;
+            
+            // Assemble the t-shirt
+            tshirtShape.appendChild(neckline);
+            tshirtShape.appendChild(leftSleeve);
+            tshirtShape.appendChild(rightSleeve);
+            tshirtShape.appendChild(memeOverlay);
+            
+            tshirtBgContainer.appendChild(tshirtShape);
+            tshirtContainer.appendChild(tshirtBgContainer);
+            
+            debugLog('✅ Created t-shirt background and shape');
+            
+            // Set up meme overlay load handlers
+            const handleOverlayLoad = () => {
+                successLog('Meme overlay loaded on t-shirt successfully!');
                 
-                // Remove any existing overlay
-                const existingOverlay = document.getElementById('meme-overlay');
-                if (existingOverlay) {
-                    existingOverlay.remove();
-                    debugLog('Removed existing overlay');
+                // Animate the t-shirt appearance if GSAP is available
+                if (typeof gsap !== 'undefined') {
+                    gsap.from(tshirtBgContainer, {
+                        opacity: 0,
+                        scale: 0.8,
+                        duration: 0.8,
+                        ease: "back.out(1.7)"
+                    });
+                    
+                    gsap.from(memeOverlay, {
+                        opacity: 0,
+                        scale: 0.5,
+                        duration: 0.6,
+                        delay: 0.3,
+                        ease: "back.out(1.7)"
+                    });
                 }
                 
-                // Create overlay element for the meme
-                const memeOverlay = document.createElement('img');
-                memeOverlay.id = 'meme-overlay';
-                memeOverlay.style.cssText = `
-                    position: absolute;
-                    top: ${overlayPosition?.top || '40%'};
-                    left: ${overlayPosition?.left || '50%'};
-                    width: ${overlayPosition?.width || '140px'};
-                    height: ${overlayPosition?.height || '140px'};
-                    transform: ${overlayPosition?.transform || 'translate(-50%, -50%)'};
-                    object-fit: contain;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-                    z-index: 10;
-                    pointer-events: none;
-                    border: 1px solid rgba(255,255,255,0.8);
-                `;
+                // Clean up event listeners
+                memeOverlay.removeEventListener('load', handleOverlayLoad);
+                memeOverlay.removeEventListener('error', handleOverlayError);
                 
-                if (mockupContainer) {
-                    mockupContainer.appendChild(memeOverlay);
-                    debugLog('📍 Created overlay element');
-                }
-                
-                // Set up overlay load handlers
-                const handleOverlayLoad = () => {
-                    successLog('Improved meme overlay loaded successfully!');
-                    
-                    // Animate the mockup appearance if GSAP is available
-                    if (typeof gsap !== 'undefined') {
-                        gsap.from(tshirtMockup, {
-                            opacity: 0,
-                            scale: 0.8,
-                            duration: 0.8,
-                            delay: 0.2,
-                            ease: "back.out(1.7)"
-                        });
-                        
-                        gsap.from(memeOverlay, {
-                            opacity: 0,
-                            scale: 0.5,
-                            duration: 0.6,
-                            delay: 0.8,
-                            ease: "back.out(1.7)"
-                        });
-                    }
-                    
-                    // Clean up event listeners
-                    tshirtMockup.removeEventListener('load', handleTshirtLoad);
-                    tshirtMockup.removeEventListener('error', handleTshirtError);
-                    memeOverlay.removeEventListener('load', handleOverlayLoad);
-                    memeOverlay.removeEventListener('error', handleOverlayError);
-                    
-                    resolve();
-                };
-                
-                const handleOverlayError = () => {
-                    errorLog(`Failed to load meme overlay: ${memeOverlayUrl}`);
-                    memeOverlay.style.display = 'none';
-                    
-                    // Still resolve as the t-shirt loaded successfully
-                    resolve();
-                };
-                
-                // Set overlay event listeners and source
-                memeOverlay.addEventListener('load', handleOverlayLoad);
-                memeOverlay.addEventListener('error', handleOverlayError);
-                memeOverlay.src = memeOverlayUrl;
-                
-                debugLog(`✅ Set overlay src to: ${memeOverlayUrl}`);
+                resolve();
             };
             
-            const handleTshirtError = () => {
-                errorLog(`Failed to load t-shirt template: ${tshirtTemplateUrl}`);
+            const handleOverlayError = () => {
+                errorLog(`Failed to load meme overlay on t-shirt: ${memeUrl}`);
+                memeOverlay.style.display = 'none';
                 
-                // Clean up and fall back
-                tshirtMockup.removeEventListener('load', handleTshirtLoad);
-                tshirtMockup.removeEventListener('error', handleTshirtError);
-                
-                showTshirtMockupFallback();
-                resolve(); // Still resolve as we have a fallback
+                // Still resolve as the t-shirt structure loaded
+                resolve();
             };
             
-            // Set t-shirt event listeners and source
-            tshirtMockup.addEventListener('load', handleTshirtLoad);
-            tshirtMockup.addEventListener('error', handleTshirtError);
-            tshirtMockup.src = tshirtTemplateUrl;
+            // Set overlay event listeners and source
+            memeOverlay.addEventListener('load', handleOverlayLoad);
+            memeOverlay.addEventListener('error', handleOverlayError);
+            memeOverlay.src = memeUrl;
             
-            debugLog(`✅ Set t-shirt template src to: ${tshirtTemplateUrl}`);
+            debugLog(`✅ Set t-shirt meme overlay src to: ${memeUrl}`);
             
         } catch (error) {
             errorLog('Error creating t-shirt mockup', error);
-            showTshirtMockupFallback();
             reject(error);
         }
     });
+}
+
+// Legacy function - now calls the new t-shirt function
+async function generateTshirtMockupWithOverlay() {
+    try {
+        if (!generatedMemeUrl) {
+            throw new Error('No meme URL available for t-shirt mockup');
+        }
+        
+        debugLog('👕 Creating t-shirt mockup...');
+        
+        // This is now handled by showTshirtWithMemeOverlay
+        // which is called from showMemeInBothContainers
+        
+        successLog('T-shirt mockup handled by new display system');
+        
+    } catch (error) {
+        errorLog('T-shirt mockup creation failed', error);
+        showTshirtMockupFallback();
+    }
 }
 
 // Fallback t-shirt mockup (simple template)
@@ -880,7 +912,7 @@ function showFinalResults() {
     debugLog(`🖼️ Generated meme URL: ${generatedMemeUrl}`);
     debugLog(`👕 Generated t-shirt URL: ${generatedTshirtUrl}`);
     
-    // Only show order button if we have meme (t-shirt is optional)
+    // Only show order button if we have meme
     if (generatedMemeUrl && orderBtn) {
         orderBtn.style.display = 'inline-block';
         
@@ -1143,7 +1175,7 @@ function showError(message) {
         if (document.body.contains(notification)) {
             document.body.removeChild(notification);
         }
-    }, 8000);
+    }, 10000); // Longer timeout for error messages with safety info
 }
 
 function showSuccess(message) {
@@ -1197,6 +1229,7 @@ function createNotification(message, type) {
         box-shadow: 0 10px 30px rgba(0,0,0,0.3);
         line-height: 1.4;
         background: ${backgroundColor};
+        white-space: pre-line;
     `;
     notification.textContent = message;
     
@@ -1234,12 +1267,12 @@ if (document.readyState === 'loading') {
 }
 
 // Console log to show functionality status
-successLog('🎯 Enhanced MemeTee Script Loaded with IMPROVED PIPELINE');
+successLog('🎯 Enhanced MemeTee Script Loaded with FIXED DISPLAY + SAFETY HANDLING');
+debugLog('🖼️ Meme Display: Now shows in BOTH left and right containers');
+debugLog('👕 T-Shirt Display: Proper t-shirt shape with CSS-created background');
+debugLog('🛡️ Safety Handling: Comprehensive error handling for content policy violations');
 debugLog('🧠 GPT-4o Vision: Directly crafts perfect DALL-E prompts');
-debugLog('🎨 DALL-E Generation: Uses optimized prompts for funnier results');
-debugLog('🖼️ Meme Display: Robust display with comprehensive error handling');
-debugLog('👕 T-Shirt Display: Enhanced overlay system with animations');
-debugLog('🐛 Debug Mode: Extensive logging including GPT-4o generated prompts');
+debugLog('🎨 DALL-E Generation: Uses optimized prompts for funnier results with safety retry');
+debugLog('🐛 Debug Mode: Extensive logging including safety violations and sanitized prompts');
 debugLog('⚡ Smart fallbacks: Multiple AI models with graceful degradation');
-debugLog('🎯 Optimized for maximum humor and viral potential');
-debugLog('💡 Check console for GPT-4o generated prompts and detailed debug info!');
+debugLog('💡 Check console for detailed error information and safety handling!');
