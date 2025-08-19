@@ -1,4 +1,4 @@
-// Vercel serverless function for AI meme generation
+// Vercel serverless function for AI meme generation - FIXED
 import OpenAI from 'openai';
 import Replicate from 'replicate';
 
@@ -34,9 +34,6 @@ async function generateMemeWithOpenAI(imageBuffer, prompt, style = 'meme') {
   });
 
   try {
-    // Convert image to base64
-    const base64Image = imageBuffer.toString('base64');
-    
     // Create a detailed prompt for meme generation
     const memePrompt = `Create a funny internet meme based on this image. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold text overlay with a witty caption. Make it suitable for social media sharing. High quality, clear text, internet meme format.`;
 
@@ -143,19 +140,26 @@ export default async function handler(req, res) {
       });
     }
 
-    // Handle multipart form data (simplified for Vercel)
+    // Handle both JSON and form data
     const contentType = req.headers['content-type'] || '';
+    console.log('Content-Type:', contentType);
     
-    if (!contentType.includes('multipart/form-data')) {
+    let image, prompt, style, provider;
+    
+    // Handle JSON request (from our frontend)
+    if (contentType.includes('application/json')) {
+      const body = req.body;
+      image = body.image;
+      prompt = body.prompt;
+      style = body.style || 'meme';
+      provider = body.provider || 'auto';
+    } else {
+      // This was the original multipart handling - remove the strict requirement
       return res.status(400).json({
         success: false,
-        error: 'Content type must be multipart/form-data'
+        error: 'Content type must be application/json'
       });
     }
-
-    // For now, we'll handle base64 encoded images in the body
-    // In production, you might want to use a proper multipart parser
-    const { image, prompt, style = 'meme', provider = 'auto' } = req.body;
 
     if (!image) {
       return res.status(400).json({

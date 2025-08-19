@@ -1,4 +1,4 @@
-// MemeTee Configuration File - VERCEL DEPLOYMENT VERSION
+// MemeTee Configuration File - VERCEL DEPLOYMENT VERSION (Belgium/Europe)
 // This configuration works with Vercel serverless functions
 
 window.MEMETEE_CONFIG = {
@@ -9,11 +9,11 @@ window.MEMETEE_CONFIG = {
         apiBaseUrl: '', // Empty for relative paths in Vercel
     },
     
-    // Pricing (simplified for coming soon)
+    // Pricing (Belgium/Europe)
     pricing: {
-        basePrice: 24.99,
-        basePriceCents: 2499,
-        currency: 'USD',
+        basePrice: 22.99,
+        basePriceCents: 2299, // €22.99 in cents
+        currency: 'EUR',
         status: 'coming_soon'
     },
     
@@ -83,13 +83,16 @@ window.MEMETEE_CONFIG = {
         analytics: false // This works
     },
     
-    // Business Information
+    // Business Information (Belgium)
     business: {
         name: 'MemeTee',
         email: 'hello@memetee.com',
-        phone: '(555) 123-MEME',
+        phone: '+32 9 123-MEME',
         website: 'https://memetee.vercel.app', // Update with your Vercel URL
-        support: 'support@memetee.com'
+        support: 'support@memetee.com',
+        location: 'Belgium',
+        currency: 'EUR',
+        region: 'Europe'
     },
     
     // UI Settings

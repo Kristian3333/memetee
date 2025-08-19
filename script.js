@@ -1,9 +1,10 @@
-// MemeTee Landing Page JavaScript - VERCEL DEPLOYMENT VERSION
+// MemeTee Landing Page JavaScript - VERCEL DEPLOYMENT VERSION (Belgium/Europe)
 
 // Configuration for Vercel deployment
 const CONFIG = {
     MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
-    PRICE: 2499, // $24.99 in cents
+    PRICE: 2299, // €22.99 in cents
+    CURRENCY: 'EUR',
     API_ENDPOINTS: {
         generateMeme: '/api/generate-meme',
         generateTshirtMockup: '/api/generate-tshirt-mockup',
@@ -46,8 +47,9 @@ function init() {
         initializeAnimations();
         checkBackendHealth();
         
-        console.log('🚀 MemeTee initialized for Vercel deployment');
+        console.log('🚀 MemeTee initialized for Vercel deployment (Belgium/Europe)');
         console.log('🎯 API Endpoints configured for serverless functions');
+        console.log('💰 Pricing set to EUR for European market');
     } catch (error) {
         console.error('Error initializing app:', error);
     }
@@ -250,7 +252,7 @@ async function generateAIContent(file) {
     }
 }
 
-// 🎨 REAL MEME GENERATION WITH VERCEL API
+// 🎨 REAL MEME GENERATION WITH VERCEL API - FIXED
 async function generateMemeWithRealAI(file) {
     try {
         console.log('🎨 Starting REAL AI meme generation with Vercel...');
@@ -258,7 +260,9 @@ async function generateMemeWithRealAI(file) {
         // Convert file to base64 for API
         const base64Data = uploadedImageData.split(',')[1]; // Remove data URL prefix
         
-        // REAL API CALL TO VERCEL SERVERLESS FUNCTION
+        console.log('📤 Sending request to API...');
+        
+        // REAL API CALL TO VERCEL SERVERLESS FUNCTION - FIXED CONTENT TYPE
         const response = await fetch(CONFIG.API_ENDPOINTS.generateMeme, {
             method: 'POST',
             headers: {
@@ -272,8 +276,11 @@ async function generateMemeWithRealAI(file) {
             })
         });
         
+        console.log('📥 Response status:', response.status);
+        
         if (!response.ok) {
             const error = await response.json();
+            console.error('API Error:', error);
             throw new Error(error.error || 'Meme generation failed');
         }
         
@@ -480,6 +487,8 @@ async function handlePaymentSubmit(e) {
             tshirtPreview: generatedTshirtUrl,
             size: document.getElementById('size').value,
             color: document.getElementById('color').value,
+            price: CONFIG.PRICE,
+            currency: CONFIG.CURRENCY,
             timestamp: new Date().toISOString()
         };
 
@@ -529,7 +538,7 @@ async function handleContactSubmit(e) {
     const formData = {
         name: form.querySelector('input[placeholder="Your Name"]').value.trim(),
         email: form.querySelector('input[placeholder="Your Email"]').value.trim(),
-        message: form.querySelector('textarea[placeholder="Your Message"]').value.trim()
+        message: form.querySelector('textarea[placeholder*="Your Message"]').value.trim()
     };
     
     // Basic validation
@@ -713,10 +722,11 @@ if (document.readyState === 'loading') {
 }
 
 // Console log to show functionality status
-console.log('🚀 MemeTee initialized for Vercel deployment');
+console.log('🚀 MemeTee initialized for Vercel deployment (Belgium/Europe)');
 console.log('📧 Contact form: REAL email functionality via serverless functions');
 console.log('🤖 AI meme generation: REAL AI integration via serverless functions');
 console.log('👕 AI t-shirt mockup: REAL AI integration via serverless functions');
 console.log('💰 Payments: Coming soon message implementation');
 console.log('🎯 All API calls routed to /api/* serverless functions');
+console.log('🇪🇺 Pricing configured for European market (EUR)');
 console.log('💡 Add your API keys to Vercel environment variables!');
