@@ -87,7 +87,7 @@ window.MEMETEE_CONFIG = {
     business: {
         name: 'MemeTee',
         email: 'hello@memetee.com',
-        phone: '+32 9 123-MEME',
+        phone: '',
         website: 'https://memetee.vercel.app', // Update with your Vercel URL
         support: 'support@memetee.com',
         location: 'Belgium',

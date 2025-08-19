@@ -1,4 +1,4 @@
-// MemeTee Landing Page JavaScript - FIXED MEME DISPLAY
+// MemeTee Landing Page JavaScript - ENHANCED FOR FUNNIER MEMES
 
 // Configuration for Vercel deployment
 const CONFIG = {
@@ -15,26 +15,13 @@ const CONFIG = {
     }
 };
 
-// DOM Elements
-const uploadArea = document.getElementById('upload-area');
-const fileInput = document.getElementById('file-input');
-const loading = document.getElementById('loading');
-const loadingText = document.getElementById('loading-text');
-const previewSection = document.getElementById('preview-section');
-const originalPreview = document.getElementById('original-preview');
-const memeImage = document.getElementById('meme-image');
-const tshirtMockup = document.getElementById('tshirt-mockup');
-const memePlaceholder = document.getElementById('meme-placeholder');
-const tshirtPlaceholder = document.getElementById('tshirt-placeholder');
-const orderBtn = document.getElementById('order-btn');
-const paymentSection = document.getElementById('payment-section');
+// DOM Elements - WITH NULL CHECKS
+let uploadArea, fileInput, loading, loadingText, previewSection;
+let originalPreview, memeImage, tshirtMockup, memePlaceholder, tshirtPlaceholder;
+let orderBtn, paymentSection;
 
 // Loading steps
-const steps = {
-    1: document.getElementById('step-1'),
-    2: document.getElementById('step-2'),
-    3: document.getElementById('step-3')
-};
+let steps = {};
 
 // Store generated content
 let generatedMemeUrl = null;
@@ -42,19 +29,110 @@ let generatedTshirtUrl = null;
 let uploadedImageData = null;
 let currentController = null; // For request cancellation
 
+// Enhanced logging system
+const DEBUG = true; // Set to false for production
+
+function debugLog(message, type = 'info') {
+    if (!DEBUG) return;
+    
+    const timestamp = new Date().toLocaleTimeString();
+    const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+    console.log(`${prefix} [${timestamp}] ${message}`);
+}
+
+function errorLog(message, error = null) {
+    debugLog(message, 'error');
+    if (error) {
+        console.error('Full error details:', error);
+    }
+}
+
+function successLog(message) {
+    debugLog(message, 'success');
+}
+
 // Initialize the application
 function init() {
     try {
+        debugLog('🚀 Initializing MemeTee application...');
+        
+        // Get DOM elements with enhanced error checking
+        if (!initializeDOMElements()) {
+            errorLog('Failed to initialize DOM elements. Some features may not work.');
+            return;
+        }
+        
         setupEventListeners();
         initializeAnimations();
         checkBackendHealth();
         
-        console.log('🚀 MemeTee initialized with Vision-Enhanced AI');
-        console.log('👁️ Using GPT-4o Vision for image analysis');
-        console.log('⚡ Smart generation with DALL-E 3 + GPT Image 1');
-        console.log('💰 Pricing set to EUR for European market');
+        successLog('MemeTee initialized successfully!');
+        successLog('Using IMPROVED PIPELINE: GPT-4o Vision → Direct DALL-E Prompting');
+        successLog('Enhanced for maximum humor and viral potential');
+        
     } catch (error) {
-        console.error('Error initializing app:', error);
+        errorLog('Critical error initializing app', error);
+    }
+}
+
+// Enhanced DOM element initialization
+function initializeDOMElements() {
+    try {
+        // Core elements
+        uploadArea = document.getElementById('upload-area');
+        fileInput = document.getElementById('file-input');
+        loading = document.getElementById('loading');
+        loadingText = document.getElementById('loading-text');
+        previewSection = document.getElementById('preview-section');
+        
+        // Image elements
+        originalPreview = document.getElementById('original-preview');
+        memeImage = document.getElementById('meme-image');
+        tshirtMockup = document.getElementById('tshirt-mockup');
+        memePlaceholder = document.getElementById('meme-placeholder');
+        tshirtPlaceholder = document.getElementById('tshirt-placeholder');
+        
+        // Control elements
+        orderBtn = document.getElementById('order-btn');
+        paymentSection = document.getElementById('payment-section');
+        
+        // Loading steps
+        steps = {
+            1: document.getElementById('step-1'),
+            2: document.getElementById('step-2'),
+            3: document.getElementById('step-3')
+        };
+        
+        // Check critical elements
+        const criticalElements = {
+            uploadArea,
+            fileInput,
+            memeImage,
+            tshirtMockup,
+            memePlaceholder,
+            tshirtPlaceholder
+        };
+        
+        const missingElements = Object.entries(criticalElements)
+            .filter(([name, element]) => !element)
+            .map(([name]) => name);
+        
+        if (missingElements.length > 0) {
+            errorLog(`Missing critical DOM elements: ${missingElements.join(', ')}`);
+            return false;
+        }
+        
+        successLog('All DOM elements initialized successfully');
+        debugLog(`Meme Image: ${memeImage ? 'Found' : 'Missing'}`);
+        debugLog(`Meme Placeholder: ${memePlaceholder ? 'Found' : 'Missing'}`);
+        debugLog(`T-shirt Mockup: ${tshirtMockup ? 'Found' : 'Missing'}`);
+        debugLog(`T-shirt Placeholder: ${tshirtPlaceholder ? 'Found' : 'Missing'}`);
+        
+        return true;
+        
+    } catch (error) {
+        errorLog('Error initializing DOM elements', error);
+        return false;
     }
 }
 
@@ -64,102 +142,137 @@ async function checkBackendHealth() {
         const response = await fetch(CONFIG.API_ENDPOINTS.health);
         const health = await response.json();
         
-        console.log('🏥 Backend Health:', health);
+        debugLog('Backend Health Check:', 'info');
+        console.log(health);
         
         if (!health.services?.ai?.openai) {
-            console.warn('⚠️ OpenAI not configured. Vision-enhanced generation will not work.');
+            debugLog('OpenAI not configured. Improved meme generation will not work.', 'warning');
             showWarning('OpenAI API not configured. Please add OPENAI_API_KEY to environment variables.');
         } else {
-            console.log('✅ OpenAI services ready for vision-enhanced meme generation!');
+            successLog('OpenAI services ready for improved meme generation!');
         }
     } catch (error) {
-        console.error('❌ Backend not reachable:', error);
+        errorLog('Backend not reachable', error);
         showError('API not responding. Please check deployment.');
     }
 }
 
 // Setup all event listeners
 function setupEventListeners() {
-    // File upload events
-    uploadArea.addEventListener('click', () => fileInput.click());
-    uploadArea.addEventListener('dragover', handleDragOver);
-    uploadArea.addEventListener('dragleave', handleDragLeave);
-    uploadArea.addEventListener('drop', handleDrop);
-    fileInput.addEventListener('change', handleFileSelect);
-    
-    // Payment form (coming soon)
-    document.getElementById('payment-form').addEventListener('submit', handlePaymentSubmit);
-    
-    // Contact form - WITH REAL EMAIL FUNCTIONALITY
-    document.getElementById('contact-form').addEventListener('submit', handleContactSubmit);
-    
-    // Navigation smooth scrolling
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-        anchor.addEventListener('click', function (e) {
-            e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({ behavior: 'smooth' });
-            }
+    try {
+        // File upload events - with null checks
+        if (uploadArea && fileInput) {
+            uploadArea.addEventListener('click', () => fileInput.click());
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            uploadArea.addEventListener('drop', handleDrop);
+            fileInput.addEventListener('change', handleFileSelect);
+        }
+        
+        // Payment form
+        const paymentForm = document.getElementById('payment-form');
+        if (paymentForm) {
+            paymentForm.addEventListener('submit', handlePaymentSubmit);
+        }
+        
+        // Contact form
+        const contactForm = document.getElementById('contact-form');
+        if (contactForm) {
+            contactForm.addEventListener('submit', handleContactSubmit);
+        }
+        
+        // Navigation smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
         });
-    });
-    
-    // Parallax effect
-    window.addEventListener('scroll', handleParallax);
+        
+        // Parallax effect
+        window.addEventListener('scroll', handleParallax);
+        
+        successLog('Event listeners setup complete');
+        
+    } catch (error) {
+        errorLog('Error setting up event listeners', error);
+    }
 }
 
 // Initialize animations
 function initializeAnimations() {
-    // Animate floating emojis
-    gsap.to('.floating-emoji', {
-        y: '+=20',
-        rotation: '+=10',
-        duration: 3,
-        repeat: -1,
-        yoyo: true,
-        ease: 'power2.inOut',
-        stagger: 0.5
-    });
-    
-    // Initial page animations
-    gsap.from('.hero h1', {
-        opacity: 0,
-        y: 50,
-        duration: 1,
-        ease: 'power3.out'
-    });
-    
-    gsap.from('.hero p', {
-        opacity: 0,
-        y: 30,
-        duration: 1,
-        delay: 0.3,
-        ease: 'power3.out'
-    });
-    
-    gsap.from('.upload-section', {
-        opacity: 0,
-        scale: 0.9,
-        duration: 1,
-        delay: 0.6,
-        ease: 'back.out(1.7)'
-    });
+    try {
+        // Check if GSAP is available
+        if (typeof gsap === 'undefined') {
+            debugLog('GSAP not loaded, skipping animations', 'warning');
+            return;
+        }
+        
+        // Animate floating emojis
+        gsap.to('.floating-emoji', {
+            y: '+=20',
+            rotation: '+=10',
+            duration: 3,
+            repeat: -1,
+            yoyo: true,
+            ease: 'power2.inOut',
+            stagger: 0.5
+        });
+        
+        // Initial page animations
+        gsap.from('.hero h1', {
+            opacity: 0,
+            y: 50,
+            duration: 1,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.hero p', {
+            opacity: 0,
+            y: 30,
+            duration: 1,
+            delay: 0.3,
+            ease: 'power3.out'
+        });
+        
+        gsap.from('.upload-section', {
+            opacity: 0,
+            scale: 0.9,
+            duration: 1,
+            delay: 0.6,
+            ease: 'back.out(1.7)'
+        });
+        
+        successLog('Animations initialized');
+        
+    } catch (error) {
+        debugLog('Error initializing animations (continuing without)', 'warning');
+    }
 }
 
 // Drag and drop handlers
 function handleDragOver(e) {
     e.preventDefault();
-    uploadArea.classList.add('drag-over');
+    if (uploadArea) {
+        uploadArea.classList.add('drag-over');
+    }
 }
 
 function handleDragLeave(e) {
     e.preventDefault();
-    uploadArea.classList.remove('drag-over');
+    if (uploadArea) {
+        uploadArea.classList.remove('drag-over');
+    }
 }
 
 function handleDrop(e) {
     e.preventDefault();
-    uploadArea.classList.remove('drag-over');
+    if (uploadArea) {
+        uploadArea.classList.remove('drag-over');
+    }
     const files = e.dataTransfer.files;
     if (files.length > 0) {
         handleFile(files[0]);
@@ -175,6 +288,8 @@ function handleFileSelect(e) {
 
 // File handling and validation
 function handleFile(file) {
+    debugLog(`Processing file: ${file.name} (${file.size} bytes)`);
+    
     // Validate file type
     if (!file.type.startsWith('image/')) {
         showError('Please upload an image file (JPG, PNG, or GIF).');
@@ -190,54 +305,92 @@ function handleFile(file) {
     // Show original image preview
     const reader = new FileReader();
     reader.onload = (e) => {
-        uploadedImageData = e.target.result; // Store base64 data
-        originalPreview.src = e.target.result;
-        previewSection.style.display = 'block';
+        uploadedImageData = e.target.result;
+        if (originalPreview) {
+            originalPreview.src = e.target.result;
+        }
+        if (previewSection) {
+            previewSection.style.display = 'block';
+        }
         
         // Reset previous results
         resetResultsDisplay();
         
-        // Animate the preview appearance
-        gsap.from(previewSection, {
-            opacity: 0,
-            y: 50,
-            duration: 0.8,
-            ease: "power2.out"
-        });
+        // Animate the preview appearance if GSAP is available
+        if (typeof gsap !== 'undefined' && previewSection) {
+            gsap.from(previewSection, {
+                opacity: 0,
+                y: 50,
+                duration: 0.8,
+                ease: "power2.out"
+            });
+        }
+        
+        successLog('File preview loaded successfully');
     };
+    
+    reader.onerror = () => {
+        errorLog('Failed to read file');
+        showError('Failed to read the uploaded file. Please try again.');
+    };
+    
     reader.readAsDataURL(file);
 
     // Start AI generation process
     generateAIContent(file);
 }
 
-// Reset results display
+// Enhanced reset results display
 function resetResultsDisplay() {
-    // Hide previous results
-    memeImage.style.display = 'none';
-    tshirtMockup.style.display = 'none';
+    debugLog('🧹 Resetting results display...');
     
-    // Show placeholders
-    memePlaceholder.style.display = 'block';
-    tshirtPlaceholder.style.display = 'block';
-    
-    // Hide order button
-    orderBtn.style.display = 'none';
-    
-    // Remove any existing overlay
-    const existingOverlay = document.getElementById('meme-overlay');
-    if (existingOverlay) {
-        existingOverlay.remove();
+    try {
+        // Hide previous results
+        if (memeImage) {
+            memeImage.style.display = 'none';
+            memeImage.src = '';
+        }
+        if (tshirtMockup) {
+            tshirtMockup.style.display = 'none';
+            tshirtMockup.src = '';
+        }
+        
+        // Show placeholders
+        if (memePlaceholder) {
+            memePlaceholder.style.display = 'block';
+        }
+        if (tshirtPlaceholder) {
+            tshirtPlaceholder.style.display = 'block';
+        }
+        
+        // Hide order button
+        if (orderBtn) {
+            orderBtn.style.display = 'none';
+        }
+        
+        // Remove any existing overlay
+        const existingOverlay = document.getElementById('meme-overlay');
+        if (existingOverlay) {
+            existingOverlay.remove();
+            debugLog('Removed existing overlay');
+        }
+        
+        // Reset stored URLs
+        generatedMemeUrl = null;
+        generatedTshirtUrl = null;
+        
+        successLog('Results display reset complete');
+        
+    } catch (error) {
+        errorLog('Error resetting display', error);
     }
-    
-    // Reset stored URLs
-    generatedMemeUrl = null;
-    generatedTshirtUrl = null;
 }
 
-// 🤖 VISION-ENHANCED AI GENERATION
+// 🎯 IMPROVED AI GENERATION PIPELINE
 async function generateAIContent(file) {
     try {
+        debugLog('🎯 Starting IMPROVED AI meme generation pipeline...');
+        
         // Cancel any existing request
         if (currentController) {
             currentController.abort();
@@ -247,24 +400,32 @@ async function generateAIContent(file) {
         currentController = new AbortController();
         
         // Show loading state
-        loading.style.display = 'block';
+        if (loading) {
+            loading.style.display = 'block';
+        }
         resetLoadingSteps();
         
-        // Step 1: Vision Analysis (NEW!)
+        // Step 1: GPT-4o Creates Perfect DALL-E Prompt
         updateLoadingStep(1, 'active');
-        loadingText.textContent = '👁️ AI is analyzing your image with GPT-4o Vision...';
-        await delay(1500);
+        if (loadingText) {
+            loadingText.textContent = '🎯 GPT-4o is crafting the perfect meme prompt from your image...';
+        }
+        await delay(2000);
         updateLoadingStep(1, 'completed');
         
-        // Step 2: Enhanced Meme Generation
+        // Step 2: Generate Hilarious Meme
         updateLoadingStep(2, 'active');
-        loadingText.textContent = '🎨 Creating hilarious meme with vision-enhanced AI...';
-        await generateVisionEnhancedMeme(file);
+        if (loadingText) {
+            loadingText.textContent = '😂 Creating your hilarious meme with improved AI pipeline...';
+        }
+        await generateImprovedMeme(file);
         updateLoadingStep(2, 'completed');
         
-        // Step 3: Create t-shirt mockup (simple overlay)
+        // Step 3: Create t-shirt mockup
         updateLoadingStep(3, 'active');
-        loadingText.textContent = 'Creating realistic t-shirt preview...';
+        if (loadingText) {
+            loadingText.textContent = '👕 Creating realistic t-shirt preview...';
+        }
         await generateTshirtMockupWithOverlay();
         updateLoadingStep(3, 'completed');
         
@@ -272,44 +433,55 @@ async function generateAIContent(file) {
         hideLoading();
         showFinalResults();
         
+        successLog('Improved AI meme generation completed successfully!');
+        
     } catch (error) {
-        console.error('Error in vision-enhanced AI generation:', error);
+        errorLog('Error in improved AI generation', error);
         hideLoading();
         
-        // Handle specific errors
-        if (error.name === 'AbortError') {
-            showError('Request was cancelled. Please try again.');
-        } else if (error.message.includes('timeout') || error.message.includes('took too long')) {
-            showError('Vision analysis took too long. Try uploading a smaller, clearer image.');
-        } else if (error.message.includes('quota') || error.message.includes('billing')) {
-            showError('OpenAI API quota exceeded. Please check your billing or try again later.');
-        } else if (error.message.includes('content policy') || error.message.includes('safety')) {
-            showError('Image content not suitable for meme generation. Please try a different image.');
-        } else if (error.message.includes('not configured') || error.message.includes('API key')) {
-            showError('OpenAI API key not configured. Please contact support.');
-        } else if (error.message.includes('verification')) {
-            showError('OpenAI organization verification required. Please contact support.');
-        } else {
-            showError('Sorry, there was an error with vision analysis. Please try again with a different image.');
-        }
+        // Handle specific errors with user-friendly messages
+        handleGenerationError(error);
     } finally {
         currentController = null;
     }
 }
 
-// 🎨 VISION-ENHANCED MEME GENERATION
-async function generateVisionEnhancedMeme(file) {
+// Enhanced error handling
+function handleGenerationError(error) {
+    if (error.name === 'AbortError') {
+        showError('Request was cancelled. Please try again.');
+    } else if (error.message.includes('timeout') || error.message.includes('took too long')) {
+        showError('Meme generation took too long. Try uploading a smaller, clearer image.');
+    } else if (error.message.includes('quota') || error.message.includes('billing')) {
+        showError('OpenAI API quota exceeded. Please check your billing or try again later.');
+    } else if (error.message.includes('content policy') || error.message.includes('safety')) {
+        showError('Image content not suitable for meme generation. Please try a different image.');
+    } else if (error.message.includes('not configured') || error.message.includes('API key')) {
+        showError('OpenAI API key not configured. Please contact support.');
+    } else if (error.message.includes('verification')) {
+        showError('OpenAI organization verification required. Please contact support.');
+    } else {
+        showError('Sorry, there was an error generating your meme. Please try again with a different image.');
+    }
+}
+
+// 🎨 IMPROVED MEME GENERATION
+async function generateImprovedMeme(file) {
     try {
-        console.log('🎨 Starting vision-enhanced meme generation...');
+        debugLog('🎨 Starting improved meme generation...');
+        
+        if (!uploadedImageData) {
+            throw new Error('No image data available');
+        }
         
         // Convert file to base64 for API
-        const base64Data = uploadedImageData.split(',')[1]; // Remove data URL prefix
+        const base64Data = uploadedImageData.split(',')[1];
         
-        console.log('📤 Sending image for vision analysis and meme generation...');
+        debugLog('📤 Sending image for improved meme generation...');
         
         // Create timeout promise
         const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Vision analysis timed out')), CONFIG.REQUEST_TIMEOUT);
+            setTimeout(() => reject(new Error('Meme generation timed out')), CONFIG.REQUEST_TIMEOUT);
         });
         
         // Create API request promise
@@ -320,7 +492,7 @@ async function generateVisionEnhancedMeme(file) {
             },
             body: JSON.stringify({
                 image: base64Data,
-                prompt: 'Create a funny, viral-worthy internet meme that relates perfectly to what\'s happening in this image',
+                prompt: 'Create a hilarious viral meme', // This will be enhanced by GPT-4o
                 style: 'meme'
             }),
             signal: currentController.signal
@@ -329,44 +501,57 @@ async function generateVisionEnhancedMeme(file) {
         // Race between API call and timeout
         const response = await Promise.race([apiPromise, timeoutPromise]);
         
-        console.log('📥 Response status:', response.status);
+        debugLog(`📥 Response status: ${response.status}`);
         
         if (!response.ok) {
             const error = await response.json();
-            console.error('Vision API Error:', error);
-            throw new Error(error.error || 'Vision-enhanced meme generation failed');
+            errorLog('Improved Meme API Error:', error);
+            throw new Error(error.error || 'Improved meme generation failed');
         }
         
         const result = await response.json();
+        debugLog('🔍 Improved API Response received');
         
         if (result.success && result.meme_url) {
             generatedMemeUrl = result.meme_url;
+            debugLog(`💾 Stored meme URL: ${generatedMemeUrl}`);
             
-            // FIRST: Show the meme in the left container
-            console.log('✅ Displaying meme in left container...');
-            showMeme(result.meme_url);
+            // CRITICAL: Show the meme in the left container
+            debugLog('🖼️ Displaying improved meme in left container...');
+            await showMeme(result.meme_url);
             
-            console.log('✅ Vision-enhanced meme generated successfully with:', result.provider);
-            console.log('👁️ Used vision analysis:', result.used_vision);
-            console.log('🎯 Prompt used:', result.prompt_used);
-            console.log('🔄 Attempts:', result.attempts);
+            successLog(`Funnier meme generated with ${result.provider}`);
             
-            if (result.image_description) {
-                console.log('📝 Vision saw:', result.image_description);
+            // Log the improved pipeline details
+            if (result.used_vision) {
+                debugLog('🎯 Used GPT-4o direct prompting for maximum humor');
+            }
+            
+            if (result.vision_prompt) {
+                console.group('🧠 GPT-4o Generated DALL-E Prompt:');
+                console.log(result.vision_prompt);
+                console.groupEnd();
+            }
+            
+            if (result.prompt_used) {
+                debugLog(`📝 Final prompt used: ${result.prompt_used.substring(0, 100)}...`);
             }
             
             if (result.revised_prompt) {
-                console.log('🎭 AI revised prompt:', result.revised_prompt);
+                debugLog(`🎭 DALL-E revised prompt: ${result.revised_prompt.substring(0, 100)}...`);
             }
             
-            // Show success message with vision info
+            debugLog(`🔄 Generation attempts: ${result.attempts?.length || 'unknown'}`);
+            debugLog(`✨ Enhancement type: ${result.enhancement}`);
+            
+            // Show success message
             if (result.used_vision) {
-                showSuccess('🎉 Vision-enhanced meme created! AI analyzed your image and created a perfectly relevant meme.');
+                showSuccess('🎉 Funnier meme created! GPT-4o analyzed your image and crafted the perfect prompt for maximum humor.');
             }
             
             // Track successful generation
             if (typeof gtag !== 'undefined') {
-                gtag('event', 'vision_enhanced_meme_generated', {
+                gtag('event', 'improved_meme_generated', {
                     'event_category': 'AI',
                     'provider': result.provider,
                     'used_vision': result.used_vision,
@@ -374,187 +559,298 @@ async function generateVisionEnhancedMeme(file) {
                 });
             }
         } else {
-            throw new Error('Invalid response from vision-enhanced meme generation API');
+            errorLog('Invalid improved API response:', result);
+            throw new Error('Invalid response from improved meme generation API');
         }
         
     } catch (error) {
-        console.error('❌ Vision-enhanced meme generation failed:', error);
+        errorLog('Improved meme generation failed', error);
         throw error;
     }
 }
 
-// 👕 SIMPLE T-SHIRT MOCKUP WITH OVERLAY (NO AI NEEDED)
+// 👕 CREATE T-SHIRT MOCKUP WITH TEMPLATE OVERLAY
 async function generateTshirtMockupWithOverlay() {
     try {
         if (!generatedMemeUrl) {
             throw new Error('No meme URL available for t-shirt mockup');
         }
         
-        console.log('👕 Creating t-shirt mockup with simple overlay...');
+        debugLog('👕 Creating t-shirt mockup with template overlay...');
+        debugLog(`🎨 Using meme URL: ${generatedMemeUrl}`);
         
-        const response = await fetch(CONFIG.API_ENDPOINTS.generateTshirtMockup, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                meme_url: generatedMemeUrl,
-                tshirt_color: 'white'
-            })
+        // Use a high-quality white t-shirt template
+        const tshirtTemplateUrl = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=600&h=700&fit=crop&crop=center&q=90';
+        
+        // Show the t-shirt mockup with overlay
+        debugLog('👕 Displaying t-shirt with meme overlay...');
+        await showTshirtMockupWithOverlay(tshirtTemplateUrl, generatedMemeUrl, {
+            top: '40%',
+            left: '50%',
+            width: '140px',
+            height: '140px',
+            transform: 'translate(-50%, -50%)'
         });
         
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.error || 'T-shirt mockup generation failed');
-        }
+        successLog('T-shirt mockup created successfully');
         
-        const result = await response.json();
-        
-        if (result.success && result.mockup_url) {
-            // Create composite t-shirt mockup IN THE RIGHT CONTAINER
-            generatedTshirtUrl = result.mockup_url;
-            console.log('✅ Displaying t-shirt mockup in right container...');
-            showTshirtMockupWithOverlay(result.mockup_url, result.meme_overlay || generatedMemeUrl, result.overlay_position);
-            
-            console.log('✅ T-shirt mockup created successfully (no AI needed)');
-            console.log('🎨 Using template-based approach:', result.provider);
-            
-            // Track successful generation
-            if (typeof gtag !== 'undefined') {
-                gtag('event', 'tshirt_mockup_created', {
-                    'event_category': 'Design',
-                    'approach': 'template-overlay'
-                });
-            }
-        } else {
-            throw new Error('Invalid response from t-shirt mockup API');
+        // Track successful generation
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'tshirt_mockup_created', {
+                'event_category': 'Design',
+                'approach': 'template-overlay'
+            });
         }
         
     } catch (error) {
-        console.error('❌ T-shirt mockup creation failed:', error);
+        errorLog('T-shirt mockup creation failed', error);
         
         // For t-shirt mockup failures, we can continue with a simple fallback
-        console.log('🔄 Using simple t-shirt template fallback...');
+        debugLog('🔄 Using simple t-shirt template fallback...');
         showTshirtMockupFallback();
     }
 }
 
-// 🖼️ Display generated meme in LEFT container
+// 🖼️ ENHANCED MEME DISPLAY FUNCTION - FIXED AND ROBUST
 function showMeme(memeUrl) {
-    console.log('🖼️ Showing meme in left container:', memeUrl);
-    
-    try {
-        // Set the meme image source
-        memeImage.src = memeUrl;
-        memeImage.style.display = 'block';
-        memePlaceholder.style.display = 'none';
+    return new Promise((resolve, reject) => {
+        debugLog('🖼️ === SHOWING MEME IN LEFT CONTAINER ===');
+        debugLog(`🔗 Meme URL: ${memeUrl}`);
         
-        // Handle image load errors
-        memeImage.onerror = function() {
-            console.error('❌ Failed to load meme image:', memeUrl);
-            memePlaceholder.style.display = 'block';
-            memeImage.style.display = 'none';
-            showError('Failed to load generated meme. Please try again.');
-        };
-        
-        // Animate the meme appearance
-        gsap.from(memeImage, {
-            opacity: 0,
-            scale: 0.8,
-            duration: 0.8,
-            ease: "back.out(1.7)"
-        });
-        
-        console.log('✅ Meme displayed successfully in left container');
-        
-    } catch (error) {
-        console.error('❌ Error displaying meme:', error);
-        memePlaceholder.style.display = 'block';
-        memeImage.style.display = 'none';
-    }
-}
-
-// 👕 Display t-shirt mockup with overlay in RIGHT container
-function showTshirtMockupWithOverlay(tshirtTemplateUrl, memeOverlayUrl, overlayPosition) {
-    console.log('👕 Creating t-shirt mockup in right container...');
-    console.log('👕 T-shirt template:', tshirtTemplateUrl);
-    console.log('🎨 Meme overlay:', memeOverlayUrl);
-    
-    try {
-        // Get the t-shirt container
-        const mockupContainer = tshirtMockup.parentNode;
-        mockupContainer.style.position = 'relative';
-        
-        // Set the base t-shirt image
-        tshirtMockup.src = tshirtTemplateUrl;
-        tshirtMockup.style.display = 'block';
-        tshirtPlaceholder.style.display = 'none';
-        
-        // Handle t-shirt image load errors
-        tshirtMockup.onerror = function() {
-            console.error('❌ Failed to load t-shirt template:', tshirtTemplateUrl);
-            showTshirtMockupFallback();
-        };
-        
-        // Remove any existing overlay
-        const existingOverlay = document.getElementById('meme-overlay');
-        if (existingOverlay) {
-            existingOverlay.remove();
+        // Validate inputs
+        if (!memeImage || !memePlaceholder) {
+            const error = 'Required meme display elements not found';
+            errorLog(error);
+            reject(new Error(error));
+            return;
         }
         
-        // Create overlay element for the meme
-        const memeOverlay = document.createElement('img');
-        memeOverlay.id = 'meme-overlay';
-        memeOverlay.style.position = 'absolute';
-        memeOverlay.style.zIndex = '10';
-        memeOverlay.style.pointerEvents = 'none'; // Don't interfere with clicks
-        mockupContainer.appendChild(memeOverlay);
+        if (!memeUrl) {
+            const error = 'No meme URL provided';
+            errorLog(error);
+            reject(new Error(error));
+            return;
+        }
         
-        // Set overlay properties
-        memeOverlay.src = memeOverlayUrl;
-        memeOverlay.style.top = overlayPosition?.top || '35%';
-        memeOverlay.style.left = overlayPosition?.left || '50%';
-        memeOverlay.style.width = overlayPosition?.width || '200px';
-        memeOverlay.style.height = overlayPosition?.height || '200px';
-        memeOverlay.style.transform = overlayPosition?.transform || 'translate(-50%, -50%)';
-        memeOverlay.style.objectFit = 'contain';
-        memeOverlay.style.borderRadius = '8px';
-        memeOverlay.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+        try {
+            // Hide placeholder and show image container
+            memePlaceholder.style.display = 'none';
+            memeImage.style.display = 'block';
+            
+            // Clear any previous src to ensure fresh load
+            memeImage.src = '';
+            
+            // Set up event handlers BEFORE setting src
+            const handleLoad = () => {
+                successLog('Improved meme image loaded successfully!');
+                debugLog(`📏 Image dimensions: ${memeImage.naturalWidth} x ${memeImage.naturalHeight}`);
+                
+                // Animate the meme appearance if GSAP is available
+                if (typeof gsap !== 'undefined') {
+                    gsap.from(memeImage, {
+                        opacity: 0,
+                        scale: 0.8,
+                        duration: 0.8,
+                        ease: "back.out(1.7)"
+                    });
+                }
+                
+                // Clean up event listeners
+                memeImage.removeEventListener('load', handleLoad);
+                memeImage.removeEventListener('error', handleError);
+                
+                resolve();
+            };
+            
+            const handleError = () => {
+                errorLog(`Failed to load improved meme image: ${memeUrl}`);
+                
+                // Reset to placeholder state
+                memePlaceholder.style.display = 'block';
+                memeImage.style.display = 'none';
+                memeImage.src = '';
+                
+                // Clean up event listeners
+                memeImage.removeEventListener('load', handleLoad);
+                memeImage.removeEventListener('error', handleError);
+                
+                reject(new Error('Failed to load meme image'));
+            };
+            
+            // Add event listeners
+            memeImage.addEventListener('load', handleLoad);
+            memeImage.addEventListener('error', handleError);
+            
+            // Set the source to trigger loading
+            memeImage.src = memeUrl;
+            debugLog(`✅ Set meme image src to: ${memeUrl}`);
+            
+            // Timeout fallback
+            setTimeout(() => {
+                if (memeImage.src === memeUrl && !memeImage.complete) {
+                    debugLog('Meme loading timeout - may still be loading...', 'warning');
+                }
+            }, 10000);
+            
+        } catch (error) {
+            errorLog('Error in showMeme function', error);
+            
+            // Reset to placeholder state on any error
+            if (memePlaceholder && memeImage) {
+                memePlaceholder.style.display = 'block';
+                memeImage.style.display = 'none';
+            }
+            
+            reject(error);
+        }
+    });
+}
+
+// 👕 ENHANCED T-SHIRT MOCKUP DISPLAY - FIXED AND ROBUST
+function showTshirtMockupWithOverlay(tshirtTemplateUrl, memeOverlayUrl, overlayPosition) {
+    return new Promise((resolve, reject) => {
+        debugLog('👕 === CREATING T-SHIRT MOCKUP IN RIGHT CONTAINER ===');
+        debugLog(`👕 T-shirt template URL: ${tshirtTemplateUrl}`);
+        debugLog(`🎨 Meme overlay URL: ${memeOverlayUrl}`);
         
-        // Handle overlay image load errors
-        memeOverlay.onerror = function() {
-            console.error('❌ Failed to load meme overlay:', memeOverlayUrl);
-            memeOverlay.style.display = 'none';
-        };
+        // Validate inputs
+        if (!tshirtMockup || !tshirtPlaceholder) {
+            const error = 'Required t-shirt display elements not found';
+            errorLog(error);
+            reject(new Error(error));
+            return;
+        }
         
-        // Animate the mockup appearance
-        gsap.from(tshirtMockup, {
-            opacity: 0,
-            scale: 0.8,
-            duration: 0.8,
-            delay: 0.2,
-            ease: "back.out(1.7)"
-        });
-        
-        gsap.from(memeOverlay, {
-            opacity: 0,
-            scale: 0.5,
-            duration: 0.6,
-            delay: 0.8,
-            ease: "back.out(1.7)"
-        });
-        
-        console.log('✅ T-shirt mockup with overlay displayed successfully');
-        
-    } catch (error) {
-        console.error('❌ Error creating t-shirt mockup:', error);
-        showTshirtMockupFallback();
-    }
+        try {
+            // Get the t-shirt container and set up positioning
+            const mockupContainer = tshirtMockup.parentNode;
+            if (mockupContainer) {
+                mockupContainer.style.position = 'relative';
+            }
+            
+            // Hide placeholder and show t-shirt
+            tshirtPlaceholder.style.display = 'none';
+            tshirtMockup.style.display = 'block';
+            
+            // Clear previous src
+            tshirtMockup.src = '';
+            
+            // Set up t-shirt load handler
+            const handleTshirtLoad = () => {
+                successLog('T-shirt template loaded successfully!');
+                
+                // Remove any existing overlay
+                const existingOverlay = document.getElementById('meme-overlay');
+                if (existingOverlay) {
+                    existingOverlay.remove();
+                    debugLog('Removed existing overlay');
+                }
+                
+                // Create overlay element for the meme
+                const memeOverlay = document.createElement('img');
+                memeOverlay.id = 'meme-overlay';
+                memeOverlay.style.cssText = `
+                    position: absolute;
+                    top: ${overlayPosition?.top || '40%'};
+                    left: ${overlayPosition?.left || '50%'};
+                    width: ${overlayPosition?.width || '140px'};
+                    height: ${overlayPosition?.height || '140px'};
+                    transform: ${overlayPosition?.transform || 'translate(-50%, -50%)'};
+                    object-fit: contain;
+                    border-radius: 8px;
+                    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                    z-index: 10;
+                    pointer-events: none;
+                    border: 1px solid rgba(255,255,255,0.8);
+                `;
+                
+                if (mockupContainer) {
+                    mockupContainer.appendChild(memeOverlay);
+                    debugLog('📍 Created overlay element');
+                }
+                
+                // Set up overlay load handlers
+                const handleOverlayLoad = () => {
+                    successLog('Improved meme overlay loaded successfully!');
+                    
+                    // Animate the mockup appearance if GSAP is available
+                    if (typeof gsap !== 'undefined') {
+                        gsap.from(tshirtMockup, {
+                            opacity: 0,
+                            scale: 0.8,
+                            duration: 0.8,
+                            delay: 0.2,
+                            ease: "back.out(1.7)"
+                        });
+                        
+                        gsap.from(memeOverlay, {
+                            opacity: 0,
+                            scale: 0.5,
+                            duration: 0.6,
+                            delay: 0.8,
+                            ease: "back.out(1.7)"
+                        });
+                    }
+                    
+                    // Clean up event listeners
+                    tshirtMockup.removeEventListener('load', handleTshirtLoad);
+                    tshirtMockup.removeEventListener('error', handleTshirtError);
+                    memeOverlay.removeEventListener('load', handleOverlayLoad);
+                    memeOverlay.removeEventListener('error', handleOverlayError);
+                    
+                    resolve();
+                };
+                
+                const handleOverlayError = () => {
+                    errorLog(`Failed to load meme overlay: ${memeOverlayUrl}`);
+                    memeOverlay.style.display = 'none';
+                    
+                    // Still resolve as the t-shirt loaded successfully
+                    resolve();
+                };
+                
+                // Set overlay event listeners and source
+                memeOverlay.addEventListener('load', handleOverlayLoad);
+                memeOverlay.addEventListener('error', handleOverlayError);
+                memeOverlay.src = memeOverlayUrl;
+                
+                debugLog(`✅ Set overlay src to: ${memeOverlayUrl}`);
+            };
+            
+            const handleTshirtError = () => {
+                errorLog(`Failed to load t-shirt template: ${tshirtTemplateUrl}`);
+                
+                // Clean up and fall back
+                tshirtMockup.removeEventListener('load', handleTshirtLoad);
+                tshirtMockup.removeEventListener('error', handleTshirtError);
+                
+                showTshirtMockupFallback();
+                resolve(); // Still resolve as we have a fallback
+            };
+            
+            // Set t-shirt event listeners and source
+            tshirtMockup.addEventListener('load', handleTshirtLoad);
+            tshirtMockup.addEventListener('error', handleTshirtError);
+            tshirtMockup.src = tshirtTemplateUrl;
+            
+            debugLog(`✅ Set t-shirt template src to: ${tshirtTemplateUrl}`);
+            
+        } catch (error) {
+            errorLog('Error creating t-shirt mockup', error);
+            showTshirtMockupFallback();
+            reject(error);
+        }
+    });
 }
 
 // Fallback t-shirt mockup (simple template)
 function showTshirtMockupFallback() {
-    console.log('📦 Using fallback t-shirt template');
+    debugLog('📦 Using fallback t-shirt template');
+    
+    if (!tshirtMockup || !tshirtPlaceholder) {
+        errorLog('Cannot show fallback - elements missing');
+        return;
+    }
     
     // Use a simple t-shirt template
     const fallbackUrl = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop&crop=center';
@@ -564,53 +860,73 @@ function showTshirtMockupFallback() {
     tshirtMockup.style.display = 'block';
     tshirtPlaceholder.style.display = 'none';
     
-    // Animate the fallback appearance
-    gsap.from(tshirtMockup, {
-        opacity: 0,
-        scale: 0.8,
-        duration: 0.8,
-        delay: 0.2,
-        ease: "back.out(1.7)"
-    });
+    // Animate the fallback appearance if GSAP is available
+    if (typeof gsap !== 'undefined') {
+        gsap.from(tshirtMockup, {
+            opacity: 0,
+            scale: 0.8,
+            duration: 0.8,
+            delay: 0.2,
+            ease: "back.out(1.7)"
+        });
+    }
+    
+    successLog('Fallback t-shirt template displayed');
 }
 
 // Show final results and order button
 function showFinalResults() {
-    // Only show order button if we have both meme and t-shirt
-    if (generatedMemeUrl && (generatedTshirtUrl || document.getElementById('meme-overlay'))) {
+    debugLog('🎬 Showing final results...');
+    debugLog(`🖼️ Generated meme URL: ${generatedMemeUrl}`);
+    debugLog(`👕 Generated t-shirt URL: ${generatedTshirtUrl}`);
+    
+    // Only show order button if we have meme (t-shirt is optional)
+    if (generatedMemeUrl && orderBtn) {
         orderBtn.style.display = 'inline-block';
         
-        // Animate order button
-        gsap.from(orderBtn, {
-            opacity: 0,
-            y: 30,
-            duration: 0.6,
-            delay: 0.5,
+        // Animate order button if GSAP is available
+        if (typeof gsap !== 'undefined') {
+            gsap.from(orderBtn, {
+                opacity: 0,
+                y: 30,
+                duration: 0.6,
+                delay: 0.5,
+                ease: "power2.out"
+            });
+        }
+        
+        successLog('Order button displayed');
+    } else {
+        debugLog('Order button not shown - missing meme or button element', 'warning');
+    }
+    
+    // Add subtle animations to result cards if GSAP is available
+    if (typeof gsap !== 'undefined') {
+        gsap.from('.result-card', {
+            y: 20,
+            stagger: 0.2,
+            duration: 0.8,
             ease: "power2.out"
         });
     }
     
-    // Add subtle animations to result cards
-    gsap.from('.result-card', {
-        y: 20,
-        stagger: 0.2,
-        duration: 0.8,
-        ease: "power2.out"
-    });
-    
     // Track successful AI generation completion
     if (typeof gtag !== 'undefined') {
-        gtag('event', 'vision_enhanced_generation_complete', {
+        gtag('event', 'improved_meme_generation_complete', {
             'event_category': 'AI',
             'event_label': 'success'
         });
     }
+    
+    successLog('Improved meme generation results displayed successfully');
 }
 
 // Loading step management
 function resetLoadingSteps() {
     Object.values(steps).forEach(step => {
-        step.className = 'step';
+        if (step) {
+            step.className = 'step';
+        }
     });
 }
 
@@ -627,27 +943,36 @@ function updateLoadingStep(stepNumber, status) {
     }
 }
 
-// Show payment section (coming soon)
+// Show payment section
 function showPayment() {
+    if (!paymentSection) {
+        errorLog('Payment section not found');
+        return;
+    }
+    
     paymentSection.style.display = 'block';
     
-    // Animate payment section
-    gsap.from(paymentSection, {
-        opacity: 0,
-        y: 30,
-        duration: 0.6,
-        ease: "power2.out"
-    });
+    // Animate payment section if GSAP is available
+    if (typeof gsap !== 'undefined') {
+        gsap.from(paymentSection, {
+            opacity: 0,
+            y: 30,
+            duration: 0.6,
+            ease: "power2.out"
+        });
+    }
     
     // Scroll to payment section
     paymentSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-// Handle payment form submission (coming soon)
+// Handle payment form submission
 async function handlePaymentSubmit(e) {
     e.preventDefault();
     
     const submitButton = document.getElementById('submit-payment');
+    if (!submitButton) return;
+    
     const originalText = submitButton.textContent;
     
     // Update button state
@@ -656,17 +981,19 @@ async function handlePaymentSubmit(e) {
 
     try {
         // Prepare order data
+        const sizeElement = document.getElementById('size');
+        const colorElement = document.getElementById('color');
+        
         const orderData = {
             memeDesign: generatedMemeUrl,
             tshirtPreview: generatedTshirtUrl,
-            size: document.getElementById('size').value,
-            color: document.getElementById('color').value,
+            size: sizeElement ? sizeElement.value : 'M',
+            color: colorElement ? colorElement.value : 'white',
             price: CONFIG.PRICE,
             currency: CONFIG.CURRENCY,
             timestamp: new Date().toISOString()
         };
 
-        // Call coming soon API
         const response = await fetch(CONFIG.API_ENDPOINTS.processOrder, {
             method: 'POST',
             headers: { 
@@ -681,18 +1008,23 @@ async function handlePaymentSubmit(e) {
             showSuccess(`🚧 ${result.message}\n\n${result.details}\n\nOrder ID: ${result.orderId}`);
             
             // Reset form
-            document.getElementById('payment-form').reset();
+            const paymentForm = document.getElementById('payment-form');
+            if (paymentForm) {
+                paymentForm.reset();
+            }
             
             // Hide payment section after showing message
             setTimeout(() => {
-                paymentSection.style.display = 'none';
+                if (paymentSection) {
+                    paymentSection.style.display = 'none';
+                }
             }, 3000);
         } else {
             throw new Error(result.error || 'Order processing failed');
         }
 
     } catch (error) {
-        console.error('Payment error:', error);
+        errorLog('Payment error', error);
         showError('There was an error processing your order. Payment integration coming soon!');
     } finally {
         submitButton.textContent = originalText;
@@ -700,19 +1032,30 @@ async function handlePaymentSubmit(e) {
     }
 }
 
-// 📧 REAL CONTACT FORM FUNCTIONALITY WITH VERCEL API
+// 📧 CONTACT FORM FUNCTIONALITY
 async function handleContactSubmit(e) {
     e.preventDefault();
     
     const form = e.target;
     const submitButton = form.querySelector('button[type="submit"]');
+    if (!submitButton) return;
+    
     const originalText = submitButton.textContent;
     
     // Get form data
+    const nameInput = form.querySelector('input[placeholder="Your Name"]');
+    const emailInput = form.querySelector('input[placeholder="Your Email"]');
+    const messageInput = form.querySelector('textarea[placeholder*="Your Message"]');
+    
+    if (!nameInput || !emailInput || !messageInput) {
+        showError('Form elements not found. Please refresh the page.');
+        return;
+    }
+    
     const formData = {
-        name: form.querySelector('input[placeholder="Your Name"]').value.trim(),
-        email: form.querySelector('input[placeholder="Your Email"]').value.trim(),
-        message: form.querySelector('textarea[placeholder*="Your Message"]').value.trim()
+        name: nameInput.value.trim(),
+        email: emailInput.value.trim(),
+        message: messageInput.value.trim()
     };
     
     // Basic validation
@@ -731,9 +1074,8 @@ async function handleContactSubmit(e) {
     submitButton.disabled = true;
     
     try {
-        console.log('Sending contact form via Vercel API...');
+        debugLog('Sending contact form via API...');
         
-        // REAL API CALL TO VERCEL SERVERLESS FUNCTION
         const response = await fetch(CONFIG.API_ENDPOINTS.contactForm, {
             method: 'POST',
             headers: {
@@ -760,7 +1102,7 @@ async function handleContactSubmit(e) {
         }
         
     } catch (error) {
-        console.error('Contact form error:', error);
+        errorLog('Contact form error', error);
         
         // Show user-friendly error message
         if (error.message.includes('rate limit') || error.message.includes('Too many')) {
@@ -769,14 +1111,6 @@ async function handleContactSubmit(e) {
             showError('Network error. Please check your connection and try again.');
         } else {
             showError('Failed to send message. Please try again or email us directly at hello@memetee.com');
-        }
-        
-        // Track failed contact form submission
-        if (typeof gtag !== 'undefined') {
-            gtag('event', 'contact_form_error', {
-                'event_category': 'Contact',
-                'event_label': error.message
-            });
         }
     } finally {
         submitButton.textContent = originalText;
@@ -796,7 +1130,9 @@ function delay(ms) {
 }
 
 function hideLoading() {
-    loading.style.display = 'none';
+    if (loading) {
+        loading.style.display = 'none';
+    }
 }
 
 function showError(message) {
@@ -807,7 +1143,7 @@ function showError(message) {
         if (document.body.contains(notification)) {
             document.body.removeChild(notification);
         }
-    }, 8000); // Longer timeout for error messages
+    }, 8000);
 }
 
 function showSuccess(message) {
@@ -864,13 +1200,15 @@ function createNotification(message, type) {
     `;
     notification.textContent = message;
     
-    // Animate in
-    gsap.from(notification, {
-        opacity: 0,
-        x: 100,
-        duration: 0.5,
-        ease: "back.out(1.7)"
-    });
+    // Animate in if GSAP is available
+    if (typeof gsap !== 'undefined') {
+        gsap.from(notification, {
+            opacity: 0,
+            x: 100,
+            duration: 0.5,
+            ease: "back.out(1.7)"
+        });
+    }
     
     return notification;
 }
@@ -896,13 +1234,12 @@ if (document.readyState === 'loading') {
 }
 
 // Console log to show functionality status
-console.log('🚀 MemeTee initialized with Vision-Enhanced AI - FIXED DISPLAY');
-console.log('👁️ Vision Analysis: GPT-4o analyzes uploaded images');
-console.log('🖼️ Meme Display: Left container shows full meme');
-console.log('👕 T-Shirt Display: Right container shows meme on t-shirt template');
-console.log('⚡ Smart fallbacks: DALL-E 3 → GPT Image 1 → Direct editing');
-console.log('📧 Contact form: REAL email functionality');
-console.log('💰 Payments: Coming soon implementation');
-console.log('🎯 All processes optimized for quality and speed');
-console.log('🇪🇺 Pricing configured for European market (EUR)');
-console.log('💡 Add your OPENAI_API_KEY to Vercel environment variables!');
+successLog('🎯 Enhanced MemeTee Script Loaded with IMPROVED PIPELINE');
+debugLog('🧠 GPT-4o Vision: Directly crafts perfect DALL-E prompts');
+debugLog('🎨 DALL-E Generation: Uses optimized prompts for funnier results');
+debugLog('🖼️ Meme Display: Robust display with comprehensive error handling');
+debugLog('👕 T-Shirt Display: Enhanced overlay system with animations');
+debugLog('🐛 Debug Mode: Extensive logging including GPT-4o generated prompts');
+debugLog('⚡ Smart fallbacks: Multiple AI models with graceful degradation');
+debugLog('🎯 Optimized for maximum humor and viral potential');
+debugLog('💡 Check console for GPT-4o generated prompts and detailed debug info!');

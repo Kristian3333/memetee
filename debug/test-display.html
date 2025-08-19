@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemeTee Display Debug Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+        }
+        .test-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.1);
+            padding: 30px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+        }
+        .ai-results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 40px 0;
+        }
+        .result-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 20px;
+            padding: 30px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+        }
+        .result-card h4 {
+            color: white;
+            font-size: 1.3rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+        .meme-container,
+        .tshirt-container {
+            position: relative;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 15px;
+            overflow: hidden;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        .result-image {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        .result-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255,255,255,0.6);
+            text-align: center;
+        }
+        .placeholder-icon {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            opacity: 0.7;
+        }
+        .btn {
+            background: linear-gradient(45deg, #ff6b6b, #ffa500);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+        }
+        .log-area {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success { background: rgba(74, 222, 128, 0.2); color: #4ade80; }
+        .status.error { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+        .status.info { background: rgba(59, 130, 246, 0.2); color: #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🐛 MemeTee Display Debug Test</h1>
+        <p>This page tests the meme and t-shirt display functionality step by step.</p>
+        
+        <div class="test-section">
+            <h2>🎮 Manual Tests</h2>
+            <button class="btn" onclick="testMemeDisplay()">Test Meme Display</button>
+            <button class="btn" onclick="testTshirtDisplay()">Test T-shirt Display</button>
+            <button class="btn" onclick="testBothDisplays()">Test Both Together</button>
+            <button class="btn" onclick="clearDisplays()">Clear All</button>
+            <button class="btn" onclick="testWithRealAPI()">Test with Real API</button>
+        </div>
+
+        <div class="test-section">
+            <h2>📊 Display Status</h2>
+            <div id="status-log"></div>
+        </div>
+
+        <!-- Actual display containers (same as main page) -->
+        <div class="ai-results">
+            <div class="result-card">
+                <h4>Vision-Enhanced AI Meme</h4>
+                <div class="meme-container">
+                    <img id="meme-image" class="result-image" style="display: none;">
+                    <div id="meme-placeholder" class="result-placeholder">
+                        <div class="placeholder-icon">🎨</div>
+                        <p>Your personalized meme will appear here</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="result-card">
+                <h4>T-Shirt Preview</h4>
+                <div class="tshirt-container">
+                    <img id="tshirt-mockup" class="result-image" style="display: none;">
+                    <div id="tshirt-placeholder" class="result-placeholder">
+                        <div class="placeholder-icon">👕</div>
+                        <p>T-shirt preview will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="test-section">
+            <h2>📝 Console Log</h2>
+            <div id="console-log" class="log-area"></div>
+        </div>
+    </div>
+
+    <script>
+        // Console override to capture logs
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logArea = document.getElementById('console-log');
+        
+        function appendLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            logArea.innerHTML += `<div style="color: ${type === 'error' ? '#ef4444' : '#3b82f6'}">[${timestamp}] ${message}</div>`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            appendLog(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            appendLog(args.join(' '), 'error');
+        };
+
+        // Status logging
+        function updateStatus(message, type = 'info') {
+            const statusLog = document.getElementById('status-log');
+            const timestamp = new Date().toLocaleTimeString();
+            statusLog.innerHTML += `<div class="status ${type}">[${timestamp}] ${message}</div>`;
+        }
+
+        // Get DOM elements
+        const memeImage = document.getElementById('meme-image');
+        const memePlaceholder = document.getElementById('meme-placeholder');
+        const tshirtMockup = document.getElementById('tshirt-mockup');
+        const tshirtPlaceholder = document.getElementById('tshirt-placeholder');
+
+        console.log('🚀 Debug page initialized');
+        console.log('📍 Meme Image Element:', memeImage);
+        console.log('📍 Meme Placeholder Element:', memePlaceholder);
+        console.log('📍 T-shirt Mockup Element:', tshirtMockup);
+        console.log('📍 T-shirt Placeholder Element:', tshirtPlaceholder);
+
+        // Test functions
+        function testMemeDisplay() {
+            console.log('🖼️ === TESTING MEME DISPLAY ===');
+            updateStatus('Testing meme display...', 'info');
+            
+            // Use a test meme image
+            const testMemeUrl = 'https://i.imgflip.com/1g8my4.jpg'; // Sample meme image
+            
+            console.log('🔗 Test meme URL:', testMemeUrl);
+            
+            if (!memeImage || !memePlaceholder) {
+                console.error('❌ Required elements not found!');
+                updateStatus('ERROR: Required DOM elements not found', 'error');
+                return;
+            }
+            
+            try {
+                // Hide placeholder and show image
+                memePlaceholder.style.display = 'none';
+                memeImage.style.display = 'block';
+                
+                // Set the meme image source
+                memeImage.src = testMemeUrl;
+                console.log('✅ Set meme image src');
+                
+                // Handle image load
+                memeImage.onload = function() {
+                    console.log('✅ Meme image loaded successfully!');
+                    console.log('📏 Image dimensions:', memeImage.naturalWidth, 'x', memeImage.naturalHeight);
+                    updateStatus('Meme display test: SUCCESS', 'success');
+                };
+                
+                memeImage.onerror = function() {
+                    console.error('❌ Failed to load meme image');
+                    updateStatus('Meme display test: FAILED - Image load error', 'error');
+                    memePlaceholder.style.display = 'block';
+                    memeImage.style.display = 'none';
+                };
+                
+            } catch (error) {
+                console.error('❌ Error in meme display test:', error);
+                updateStatus('Meme display test: FAILED - ' + error.message, 'error');
+            }
+        }
+
+        function testTshirtDisplay() {
+            console.log('👕 === TESTING T-SHIRT DISPLAY ===');
+            updateStatus('Testing t-shirt display...', 'info');
+            
+            // Test t-shirt template
+            const testTshirtUrl = 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop&crop=center';
+            const testMemeOverlay = 'https://i.imgflip.com/1g8my4.jpg';
+            
+            console.log('👕 T-shirt template URL:', testTshirtUrl);
+            console.log('🎨 Meme overlay URL:', testMemeOverlay);
+            
+            if (!tshirtMockup || !tshirtPlaceholder) {
+                console.error('❌ Required t-shirt elements not found!');
+                updateStatus('ERROR: Required t-shirt DOM elements not found', 'error');
+                return;
+            }
+            
+            try {
+                // Get container and set up positioning
+                const mockupContainer = tshirtMockup.parentNode;
+                mockupContainer.style.position = 'relative';
+                
+                // Hide placeholder and show t-shirt
+                tshirtPlaceholder.style.display = 'none';
+                tshirtMockup.style.display = 'block';
+                
+                // Set base t-shirt image
+                tshirtMockup.src = testTshirtUrl;
+                console.log('✅ Set t-shirt template src');
+                
+                tshirtMockup.onload = function() {
+                    console.log('✅ T-shirt template loaded successfully!');
+                    
+                    // Remove existing overlay
+                    const existingOverlay = document.getElementById('meme-overlay');
+                    if (existingOverlay) {
+                        existingOverlay.remove();
+                        console.log('🗑️ Removed existing overlay');
+                    }
+                    
+                    // Create overlay element
+                    const memeOverlay = document.createElement('img');
+                    memeOverlay.id = 'meme-overlay';
+                    memeOverlay.style.cssText = `
+                        position: absolute;
+                        top: 40%;
+                        left: 50%;
+                        width: 120px;
+                        height: 120px;
+                        transform: translate(-50%, -50%);
+                        object-fit: contain;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                        z-index: 10;
+                        pointer-events: none;
+                        border: 2px solid white;
+                    `;
+                    
+                    mockupContainer.appendChild(memeOverlay);
+                    console.log('📍 Created overlay element');
+                    
+                    // Set overlay image
+                    memeOverlay.src = testMemeOverlay;
+                    
+                    memeOverlay.onload = function() {
+                        console.log('✅ Meme overlay loaded successfully!');
+                        updateStatus('T-shirt display test: SUCCESS', 'success');
+                    };
+                    
+                    memeOverlay.onerror = function() {
+                        console.error('❌ Failed to load meme overlay');
+                        updateStatus('T-shirt display test: FAILED - Overlay load error', 'error');
+                    };
+                };
+                
+                tshirtMockup.onerror = function() {
+                    console.error('❌ Failed to load t-shirt template');
+                    updateStatus('T-shirt display test: FAILED - Template load error', 'error');
+                    tshirtPlaceholder.style.display = 'block';
+                    tshirtMockup.style.display = 'none';
+                };
+                
+            } catch (error) {
+                console.error('❌ Error in t-shirt display test:', error);
+                updateStatus('T-shirt display test: FAILED - ' + error.message, 'error');
+            }
+        }
+
+        function testBothDisplays() {
+            console.log('🎬 === TESTING BOTH DISPLAYS TOGETHER ===');
+            updateStatus('Testing both displays together...', 'info');
+            
+            // Clear first
+            clearDisplays();
+            
+            // Wait a bit then test both
+            setTimeout(() => {
+                testMemeDisplay();
+                setTimeout(() => {
+                    testTshirtDisplay();
+                }, 1000);
+            }, 500);
+        }
+
+        function clearDisplays() {
+            console.log('🧹 === CLEARING ALL DISPLAYS ===');
+            updateStatus('Clearing all displays...', 'info');
+            
+            // Reset meme display
+            if (memeImage && memePlaceholder) {
+                memeImage.style.display = 'none';
+                memePlaceholder.style.display = 'block';
+                memeImage.src = '';
+            }
+            
+            // Reset t-shirt display
+            if (tshirtMockup && tshirtPlaceholder) {
+                tshirtMockup.style.display = 'none';
+                tshirtPlaceholder.style.display = 'block';
+                tshirtMockup.src = '';
+            }
+            
+            // Remove overlay
+            const existingOverlay = document.getElementById('meme-overlay');
+            if (existingOverlay) {
+                existingOverlay.remove();
+                console.log('🗑️ Removed overlay');
+            }
+            
+            updateStatus('All displays cleared', 'success');
+        }
+
+        async function testWithRealAPI() {
+            console.log('🚀 === TESTING WITH REAL API ===');
+            updateStatus('Testing with real API (using base64 test image)...', 'info');
+            
+            // Clear displays first
+            clearDisplays();
+            
+            // Create a simple test image (base64 encoded small PNG)
+            const testImageBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+            
+            try {
+                updateStatus('Calling /api/generate-meme...', 'info');
+                
+                const response = await fetch('/api/generate-meme', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        image: testImageBase64,
+                        prompt: 'Create a simple funny meme for testing',
+                        style: 'meme'
+                    })
+                });
+                
+                console.log('📥 API Response status:', response.status);
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('🔍 API Response:', result);
+                    
+                    if (result.success && result.meme_url) {
+                        updateStatus('API call successful! Testing display...', 'success');
+                        
+                        // Test the actual display functions with real API result
+                        showMeme(result.meme_url);
+                        showTshirtMockupWithOverlay(
+                            'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=500&fit=crop&crop=center',
+                            result.meme_url,
+                            { top: '40%', left: '50%', width: '120px', height: '120px', transform: 'translate(-50%, -50%)' }
+                        );
+                    } else {
+                        updateStatus('API call failed: ' + (result.error || 'Unknown error'), 'error');
+                    }
+                } else {
+                    const error = await response.text();
+                    console.error('❌ API Error:', error);
+                    updateStatus('API call failed with status ' + response.status, 'error');
+                }
+                
+            } catch (error) {
+                console.error('❌ API test error:', error);
+                updateStatus('API test failed: ' + error.message, 'error');
+            }
+        }
+
+        // Copy the fixed display functions from main script
+        function showMeme(memeUrl) {
+            console.log('🖼️ === SHOWING MEME (COPIED FROM MAIN) ===');
+            console.log('🔗 Meme URL:', memeUrl);
+            
+            if (!memeImage || !memePlaceholder) {
+                console.error('❌ Meme elements not found!');
+                return;
+            }
+            
+            if (!memeUrl) {
+                console.error('❌ No meme URL provided!');
+                return;
+            }
+            
+            try {
+                // Hide placeholder and show image
+                memePlaceholder.style.display = 'none';
+                memeImage.style.display = 'block';
+                
+                // Set the meme image source
+                memeImage.src = memeUrl;
+                console.log('✅ Set meme image src to:', memeUrl);
+                
+                // Handle image load success
+                memeImage.onload = function() {
+                    console.log('✅ Meme image loaded successfully!');
+                    updateStatus('Real meme display: SUCCESS', 'success');
+                };
+                
+                // Handle image load errors
+                memeImage.onerror = function() {
+                    console.error('❌ Failed to load meme image:', memeUrl);
+                    memePlaceholder.style.display = 'block';
+                    memeImage.style.display = 'none';
+                    updateStatus('Real meme display: FAILED', 'error');
+                };
+                
+            } catch (error) {
+                console.error('❌ Error in showMeme function:', error);
+                updateStatus('Real meme display: ERROR - ' + error.message, 'error');
+            }
+        }
+
+        function showTshirtMockupWithOverlay(tshirtTemplateUrl, memeOverlayUrl, overlayPosition) {
+            console.log('👕 === CREATING T-SHIRT MOCKUP (COPIED FROM MAIN) ===');
+            console.log('👕 T-shirt template URL:', tshirtTemplateUrl);
+            console.log('🎨 Meme overlay URL:', memeOverlayUrl);
+            
+            if (!tshirtMockup || !tshirtPlaceholder) {
+                console.error('❌ T-shirt elements not found!');
+                return;
+            }
+            
+            try {
+                // Get the t-shirt container
+                const mockupContainer = tshirtMockup.parentNode;
+                mockupContainer.style.position = 'relative';
+                
+                // Hide placeholder and show t-shirt
+                tshirtPlaceholder.style.display = 'none';
+                tshirtMockup.style.display = 'block';
+                
+                // Set the base t-shirt image
+                tshirtMockup.src = tshirtTemplateUrl;
+                console.log('✅ Set t-shirt template src');
+                
+                // Handle t-shirt image load success
+                tshirtMockup.onload = function() {
+                    console.log('✅ T-shirt template loaded successfully!');
+                    
+                    // Remove any existing overlay
+                    const existingOverlay = document.getElementById('meme-overlay');
+                    if (existingOverlay) {
+                        existingOverlay.remove();
+                    }
+                    
+                    // Create overlay element for the meme
+                    const memeOverlay = document.createElement('img');
+                    memeOverlay.id = 'meme-overlay';
+                    memeOverlay.style.cssText = `
+                        position: absolute;
+                        top: ${overlayPosition?.top || '40%'};
+                        left: ${overlayPosition?.left || '50%'};
+                        width: ${overlayPosition?.width || '120px'};
+                        height: ${overlayPosition?.height || '120px'};
+                        transform: ${overlayPosition?.transform || 'translate(-50%, -50%)'};
+                        object-fit: contain;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                        z-index: 10;
+                        pointer-events: none;
+                        border: 2px solid white;
+                    `;
+                    
+                    mockupContainer.appendChild(memeOverlay);
+                    console.log('📍 Created overlay element');
+                    
+                    // Set overlay image
+                    memeOverlay.src = memeOverlayUrl;
+                    
+                    // Handle overlay load success
+                    memeOverlay.onload = function() {
+                        console.log('✅ Real meme overlay loaded successfully!');
+                        updateStatus('Real t-shirt display: SUCCESS', 'success');
+                    };
+                    
+                    // Handle overlay load errors
+                    memeOverlay.onerror = function() {
+                        console.error('❌ Failed to load real meme overlay:', memeOverlayUrl);
+                        updateStatus('Real t-shirt display: FAILED - Overlay error', 'error');
+                    };
+                };
+                
+                // Handle t-shirt load errors
+                tshirtMockup.onerror = function() {
+                    console.error('❌ Failed to load t-shirt template:', tshirtTemplateUrl);
+                    updateStatus('Real t-shirt display: FAILED - Template error', 'error');
+                };
+                
+            } catch (error) {
+                console.error('❌ Error creating real t-shirt mockup:', error);
+                updateStatus('Real t-shirt display: ERROR - ' + error.message, 'error');
+            }
+        }
+
+        // Initialize
+        updateStatus('Debug page ready! Use the buttons above to test.', 'success');
+    </script>
+</body>
+</html>
