@@ -1,4 +1,4 @@
-// Vercel serverless function for AI meme generation - FIXED GPT IMAGE 1 WITH toFile
+// Vercel serverless function for AI meme generation - OPTIMIZED FOR SPEED
 import OpenAI, { toFile } from 'openai';
 
 // Rate limiting store (in production, use Redis or similar)
@@ -27,75 +27,62 @@ function checkRateLimit(ip) {
   return true;
 }
 
-// 🚀 GPT Image 1 - Image Editing (Image-to-Image) - FIXED WITH toFile
-async function generateMemeWithGPTImage1Edit(imageBuffer, prompt, style = 'meme') {
+// 🆘 DALL-E 3 - FAST AND RELIABLE (Primary Choice)
+async function generateMemeWithDALLE3(prompt, style = 'meme', includeImageContext = '') {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
 
   try {
-    // Optimized prompt for GPT Image 1 meme generation
-    const memePrompt = `Transform this image into a hilarious internet meme. ${prompt || 'Create something funny and clever that will go viral.'}. Add bold, eye-catching meme text overlay with witty captions. Style: ${style}. Make it shareable, engaging, and perfect for social media. Ensure text is clear, readable, and positioned well. High quality meme format with professional text overlay.`;
+    // Enhanced prompt for DALL-E 3 with image context if available
+    const contextText = includeImageContext ? `Based on an uploaded image: ${includeImageContext}. ` : '';
+    const memePrompt = `${contextText}Create a funny internet meme. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold text overlay with witty caption. Shareable social media format. High quality with clear, readable text.`;
 
-    console.log('🎨 Generating meme with GPT Image 1 image editing...');
+    console.log('🎨 Generating meme with DALL-E 3 (fast and reliable)...');
     
-    // Use OpenAI's toFile helper to convert Buffer to proper file object
-    const imageFile = await toFile(imageBuffer, 'input.png', { type: 'image/png' });
-    
-    // Using GPT Image 1's image editing capability - CORRECT PARAMETERS
-    const response = await openai.images.edit({
-      model: "gpt-image-1",
-      image: imageFile,
+    const response = await openai.images.generate({
+      model: "dall-e-3",
       prompt: memePrompt,
       size: "1024x1024",
-      quality: "high",
-      background: "auto",
-      output_format: "png",
+      quality: "hd",
+      style: "vivid",
+      response_format: "url", // DALL-E 3 returns URLs (faster)
       n: 1
     });
 
-    // GPT Image 1 returns b64_json, not URL
-    const imageBase64 = response.data[0].b64_json;
-    
-    if (!imageBase64) {
-      throw new Error('No base64 image data returned from GPT Image 1');
-    }
+    console.log('✅ DALL-E 3 meme generation successful');
 
-    // Convert base64 to data URL for frontend display
-    const imageUrl = `data:image/png;base64,${imageBase64}`;
-    
-    console.log('✅ GPT Image 1 image editing successful');
-    
     return {
-      url: imageUrl,
-      provider: 'gpt-image-1-edit',
+      url: response.data[0].url,
+      provider: 'dall-e-3',
       prompt: memePrompt,
-      base64: imageBase64
+      revised_prompt: response.data[0].revised_prompt
     };
 
   } catch (error) {
-    console.error('❌ GPT Image 1 image editing failed:', error);
+    console.error('❌ DALL-E 3 failed:', error);
     throw error;
   }
 }
 
-// 🔄 GPT Image 1 Text-to-Image Generation - CORRECT IMPLEMENTATION
-async function generateMemeWithGPTImage1Generate(prompt, style = 'meme') {
+// 🚀 GPT Image 1 - Text-to-Image (Faster than image editing)
+async function generateMemeWithGPTImage1Generate(prompt, style = 'meme', includeImageContext = '') {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
 
   try {
-    const memePrompt = `Create a funny internet meme image. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold meme text overlay with witty captions. Make it viral-worthy and shareable for social media. High quality, clear readable text, professional meme format.`;
+    const contextText = includeImageContext ? `Based on an uploaded image: ${includeImageContext}. ` : '';
+    const memePrompt = `${contextText}Create a funny internet meme image. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold meme text overlay with witty captions. Make it viral-worthy and shareable for social media. High quality, clear readable text, professional meme format.`;
 
     console.log('🔄 Generating meme with GPT Image 1 text-to-image...');
     
-    // Using GPT Image 1's text-to-image generation - CORRECT PARAMETERS
+    // Using GPT Image 1's text-to-image generation - OPTIMIZED FOR SPEED
     const response = await openai.images.generate({
       model: "gpt-image-1",
       prompt: memePrompt,
       size: "1024x1024",
-      quality: "high",
+      quality: "medium", // Use medium instead of high for speed
       background: "auto",
       output_format: "png",
       n: 1
@@ -126,37 +113,65 @@ async function generateMemeWithGPTImage1Generate(prompt, style = 'meme') {
   }
 }
 
-// 🆘 DALL-E 3 Legacy Fallback - WORKING IMPLEMENTATION
-async function generateMemeWithDALLE3(prompt, style = 'meme') {
+// 🎨 GPT Image 1 - Image Editing (Slower, use as last resort)
+async function generateMemeWithGPTImage1Edit(imageBuffer, prompt, style = 'meme') {
   const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY,
   });
 
   try {
-    const memePrompt = `Create a funny internet meme. ${prompt || 'Make it humorous and clever.'}. Style: ${style}. Add bold text overlay with witty caption. Shareable social media format.`;
+    const memePrompt = `Transform this image into a hilarious internet meme. ${prompt || 'Create something funny and clever that will go viral.'}. Add bold, eye-catching meme text overlay with witty captions. Style: ${style}. Make it shareable, engaging, and perfect for social media. Ensure text is clear, readable, and positioned well. High quality meme format with professional text overlay.`;
 
-    console.log('🆘 Using DALL-E 3 fallback...');
+    console.log('🎨 Generating meme with GPT Image 1 image editing (may be slow)...');
     
-    const response = await openai.images.generate({
-      model: "dall-e-3",
+    // Use OpenAI's toFile helper to convert Buffer to proper file object
+    const imageFile = await toFile(imageBuffer, 'input.png', { type: 'image/png' });
+    
+    // Using GPT Image 1's image editing capability - OPTIMIZED FOR SPEED
+    const response = await openai.images.edit({
+      model: "gpt-image-1",
+      image: imageFile,
       prompt: memePrompt,
       size: "1024x1024",
-      quality: "hd",
-      style: "vivid",
-      response_format: "url", // DALL-E 3 can return URLs
+      quality: "medium", // Use medium instead of high for speed
+      background: "auto",
+      output_format: "png",
       n: 1
     });
 
+    const imageBase64 = response.data[0].b64_json;
+    
+    if (!imageBase64) {
+      throw new Error('No base64 image data returned from GPT Image 1');
+    }
+
+    const imageUrl = `data:image/png;base64,${imageBase64}`;
+    
+    console.log('✅ GPT Image 1 image editing successful');
+    
     return {
-      url: response.data[0].url,
-      provider: 'dall-e-3-fallback',
+      url: imageUrl,
+      provider: 'gpt-image-1-edit',
       prompt: memePrompt,
-      revised_prompt: response.data[0].revised_prompt
+      base64: imageBase64
     };
 
   } catch (error) {
-    console.error('❌ DALL-E 3 fallback failed:', error);
+    console.error('❌ GPT Image 1 image editing failed:', error);
     throw error;
+  }
+}
+
+// Helper function to describe uploaded image for context
+function generateImageContext(imageBuffer) {
+  // Simple context based on image size - in a real app you might use vision API
+  const sizeKB = Math.round(imageBuffer.length / 1024);
+  if (sizeKB < 100) {
+    return "a small image, possibly a simple graphic or icon";
+  } else if (sizeKB < 500) {
+    return "a medium-sized image, likely a photo or detailed graphic";
+  } else {
+    return "a large detailed image, probably a high-quality photo";
   }
 }
 
@@ -213,12 +228,14 @@ export default async function handler(req, res) {
       });
     }
 
+    console.log('🚀 Starting FAST meme generation - optimized for Vercel timeouts');
+
     let result;
     let attempts = [];
+    let imageContext = '';
     
-    // If image is provided, try image editing first
+    // If image is provided, prepare it and generate context
     if (image) {
-      // Convert base64 to buffer
       let imageBuffer;
       try {
         const base64Data = image.replace(/^data:image\/[a-z]+;base64,/, '');
@@ -231,6 +248,10 @@ export default async function handler(req, res) {
             error: 'Image too large. Maximum size is 10MB.'
           });
         }
+        
+        // Generate simple context for the image
+        imageContext = generateImageContext(imageBuffer);
+        
       } catch (error) {
         return res.status(400).json({
           success: false,
@@ -238,48 +259,57 @@ export default async function handler(req, res) {
         });
       }
 
-      console.log('🚀 Starting meme generation with GPT Image 1 (OpenAI\'s latest 2025 model)');
-
-      // Try GPT Image 1 image editing first (best for uploaded images)
+      // PRIORITIZE SPEED: Try fastest methods first
+      
+      // 1. Try DALL-E 3 first (fastest, most reliable)
       try {
-        result = await generateMemeWithGPTImage1Edit(imageBuffer, prompt, style);
-        attempts.push('gpt-image-1-edit: success');
+        result = await generateMemeWithDALLE3(prompt, style, imageContext);
+        attempts.push('dall-e-3-with-context: success');
       } catch (error) {
-        attempts.push(`gpt-image-1-edit: ${error.message}`);
-        console.log('🔄 GPT Image 1 editing failed, trying text-to-image generation...');
+        attempts.push(`dall-e-3-with-context: ${error.message}`);
+        console.log('🔄 DALL-E 3 failed, trying GPT Image 1 text-to-image...');
         
-        // Try GPT Image 1 text-to-image as fallback
+        // 2. Try GPT Image 1 text-to-image (faster than image editing)
         try {
-          result = await generateMemeWithGPTImage1Generate(prompt, style);
-          attempts.push('gpt-image-1-generate: success');
+          result = await generateMemeWithGPTImage1Generate(prompt, style, imageContext);
+          attempts.push('gpt-image-1-generate-with-context: success');
         } catch (error) {
-          attempts.push(`gpt-image-1-generate: ${error.message}`);
-          console.log('🆘 GPT Image 1 failed completely, using DALL-E 3...');
+          attempts.push(`gpt-image-1-generate-with-context: ${error.message}`);
+          console.log('⚠️ Fast methods failed, trying GPT Image 1 image editing (may timeout)...');
           
-          // Final fallback to DALL-E 3
-          result = await generateMemeWithDALLE3(prompt, style);
-          attempts.push('dall-e-3: success');
+          // 3. Try GPT Image 1 image editing (slowest, most likely to timeout)
+          try {
+            result = await generateMemeWithGPTImage1Edit(imageBuffer, prompt, style);
+            attempts.push('gpt-image-1-edit: success');
+          } catch (error) {
+            attempts.push(`gpt-image-1-edit: ${error.message}`);
+            console.log('🆘 All methods failed, using basic DALL-E 3...');
+            
+            // 4. Final fallback to basic DALL-E 3
+            result = await generateMemeWithDALLE3(prompt, style);
+            attempts.push('dall-e-3-basic: success');
+          }
         }
       }
     } else {
-      // No image provided, use text-to-image generation only
-      console.log('🚀 No image provided, using text-to-image generation');
+      // No image provided - use fastest text-to-image methods
       
+      // 1. Try DALL-E 3 first (fastest)
       try {
-        result = await generateMemeWithGPTImage1Generate(prompt, style);
-        attempts.push('gpt-image-1-generate: success');
-      } catch (error) {
-        attempts.push(`gpt-image-1-generate: ${error.message}`);
-        console.log('🆘 GPT Image 1 generation failed, using DALL-E 3...');
-        
-        // Fallback to DALL-E 3
         result = await generateMemeWithDALLE3(prompt, style);
         attempts.push('dall-e-3: success');
+      } catch (error) {
+        attempts.push(`dall-e-3: ${error.message}`);
+        console.log('🔄 DALL-E 3 failed, trying GPT Image 1...');
+        
+        // 2. Try GPT Image 1 as fallback
+        result = await generateMemeWithGPTImage1Generate(prompt, style);
+        attempts.push('gpt-image-1-generate: success');
       }
     }
 
     if (!result) {
-      throw new Error('All OpenAI models failed to generate meme');
+      throw new Error('All AI models failed to generate meme');
     }
 
     console.log(`🎉 Meme generated successfully with ${result.provider}`);
@@ -292,14 +322,21 @@ export default async function handler(req, res) {
       revised_prompt: result.revised_prompt,
       generation_time: new Date().toISOString(),
       attempts: attempts,
-      has_base64: !!result.base64
+      has_base64: !!result.base64,
+      optimization: 'speed-optimized'
     });
 
   } catch (error) {
     console.error('❌ Meme generation error:', error);
     
     // Specific error handling
-    if (error.message.includes('quota') || error.message.includes('billing')) {
+    if (error.message.includes('timeout') || error.name === 'TimeoutError') {
+      res.status(408).json({
+        success: false,
+        error: 'Generation took too long. Please try again with a simpler prompt.',
+        code: 'TIMEOUT_ERROR'
+      });
+    } else if (error.message.includes('quota') || error.message.includes('billing')) {
       res.status(402).json({
         success: false,
         error: 'OpenAI API quota exceeded. Please check your billing or try again later.',

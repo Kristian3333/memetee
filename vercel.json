@@ -1,19 +1,22 @@
 {
   "functions": {
     "api/generate-meme.js": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "api/generate-tshirt-mockup.js": {
       "maxDuration": 30
     },
     "api/contact.js": {
-      "maxDuration": 10
-    },
-    "api/health.js": {
-      "maxDuration": 5
+      "maxDuration": 30
     },
     "api/process-order.js": {
-      "maxDuration": 5
+      "maxDuration": 30
     }
-  }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/$1"
+    }
+  ]
 }

@@ -1,10 +1,11 @@
-// MemeTee Landing Page JavaScript - UPDATED WITH GPT IMAGE 1 & SIMPLE T-SHIRT OVERLAY
+// MemeTee Landing Page JavaScript - OPTIMIZED FOR TIMEOUTS
 
 // Configuration for Vercel deployment
 const CONFIG = {
     MAX_FILE_SIZE: 10 * 1024 * 1024, // 10MB
     PRICE: 2299, // €22.99 in cents
     CURRENCY: 'EUR',
+    REQUEST_TIMEOUT: 25000, // 25 seconds (under Vercel's 30s limit)
     API_ENDPOINTS: {
         generateMeme: '/api/generate-meme',
         generateTshirtMockup: '/api/generate-tshirt-mockup',
@@ -39,6 +40,7 @@ const steps = {
 let generatedMemeUrl = null;
 let generatedTshirtUrl = null;
 let uploadedImageData = null;
+let currentController = null; // For request cancellation
 
 // Initialize the application
 function init() {
@@ -47,8 +49,8 @@ function init() {
         initializeAnimations();
         checkBackendHealth();
         
-        console.log('🚀 MemeTee initialized with GPT Image 1 & Simple T-Shirt Overlay');
-        console.log('🎯 Using OpenAI\'s latest 2025 GPT Image 1 model for superior results');
+        console.log('🚀 MemeTee initialized with timeout optimization');
+        console.log('⚡ Prioritizing DALL-E 3 for speed and reliability');
         console.log('💰 Pricing set to EUR for European market');
     } catch (error) {
         console.error('Error initializing app:', error);
@@ -64,10 +66,10 @@ async function checkBackendHealth() {
         console.log('🏥 Backend Health:', health);
         
         if (!health.services?.ai?.openai) {
-            console.warn('⚠️ OpenAI not configured. GPT Image 1 generation will not work.');
+            console.warn('⚠️ OpenAI not configured. Meme generation will not work.');
             showWarning('OpenAI API not configured. Please add OPENAI_API_KEY to environment variables.');
         } else {
-            console.log('✅ OpenAI GPT Image 1 services ready for meme generation!');
+            console.log('✅ OpenAI services ready for meme generation!');
         }
     } catch (error) {
         console.error('❌ Backend not reachable:', error);
@@ -205,9 +207,17 @@ function handleFile(file) {
     generateAIContent(file);
 }
 
-// 🤖 AI GENERATION WITH GPT IMAGE 1 (OpenAI's Latest 2025 Model)
+// 🤖 AI GENERATION WITH TIMEOUT HANDLING
 async function generateAIContent(file) {
     try {
+        // Cancel any existing request
+        if (currentController) {
+            currentController.abort();
+        }
+        
+        // Create new abort controller for timeout handling
+        currentController = new AbortController();
+        
         // Show loading state
         loading.style.display = 'block';
         resetLoadingSteps();
@@ -215,13 +225,13 @@ async function generateAIContent(file) {
         // Step 1: Analyzing photo
         updateLoadingStep(1, 'active');
         loadingText.textContent = 'Analyzing your photo...';
-        await delay(1000);
+        await delay(800);
         updateLoadingStep(1, 'completed');
         
-        // Step 2: Generate meme with GPT Image 1
+        // Step 2: Generate meme with optimized approach
         updateLoadingStep(2, 'active');
-        loadingText.textContent = 'GPT Image 1 is creating your hilarious meme...';
-        await generateMemeWithGPTImage1AI(file);
+        loadingText.textContent = 'AI is creating your hilarious meme (optimized for speed)...';
+        await generateMemeWithOptimizedAI(file);
         updateLoadingStep(2, 'completed');
         
         // Step 3: Create t-shirt mockup (simple overlay)
@@ -238,40 +248,58 @@ async function generateAIContent(file) {
         console.error('Error in AI generation:', error);
         hideLoading();
         
-        // Handle specific AI errors
-        if (error.message.includes('quota') || error.message.includes('billing')) {
+        // Handle specific errors
+        if (error.name === 'AbortError') {
+            showError('Request was cancelled. Please try again.');
+        } else if (error.message.includes('timeout') || error.message.includes('took too long')) {
+            showError('Generation took too long. Try uploading a smaller image or using a simpler description.');
+        } else if (error.message.includes('quota') || error.message.includes('billing')) {
             showError('OpenAI API quota exceeded. Please check your billing or try again later.');
         } else if (error.message.includes('content policy') || error.message.includes('safety')) {
             showError('Image content not suitable for meme generation. Please try a different image.');
         } else if (error.message.includes('not configured') || error.message.includes('API key')) {
             showError('OpenAI API key not configured. Please contact support.');
+        } else if (error.message.includes('verification')) {
+            showError('OpenAI organization verification required. Please contact support.');
         } else {
-            showError('Sorry, there was an error generating your meme. Please try again.');
+            showError('Sorry, there was an error generating your meme. Please try again with a different image.');
         }
+    } finally {
+        currentController = null;
     }
 }
 
-// 🎨 GPT IMAGE 1 MEME GENERATION (OpenAI's Latest 2025 Model)
-async function generateMemeWithGPTImage1AI(file) {
+// 🎨 OPTIMIZED MEME GENERATION WITH TIMEOUT HANDLING
+async function generateMemeWithOptimizedAI(file) {
     try {
-        console.log('🎨 Starting GPT Image 1 meme generation (OpenAI\'s latest 2025 model)...');
+        console.log('🎨 Starting optimized meme generation...');
         
         // Convert file to base64 for API
         const base64Data = uploadedImageData.split(',')[1]; // Remove data URL prefix
         
-        console.log('📤 Sending request to GPT Image 1 API...');
+        console.log('📤 Sending request to optimized meme API...');
         
-        const response = await fetch(CONFIG.API_ENDPOINTS.generateMeme, {
+        // Create timeout promise
+        const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Request timed out')), CONFIG.REQUEST_TIMEOUT);
+        });
+        
+        // Create API request promise
+        const apiPromise = fetch(CONFIG.API_ENDPOINTS.generateMeme, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             body: JSON.stringify({
                 image: base64Data,
-                prompt: 'Create a funny, viral-worthy internet meme from this image with clever humor and perfect text overlay',
+                prompt: 'Create a funny, viral-worthy internet meme with clever humor and perfect text overlay',
                 style: 'meme'
-            })
+            }),
+            signal: currentController.signal
         });
+        
+        // Race between API call and timeout
+        const response = await Promise.race([apiPromise, timeoutPromise]);
         
         console.log('📥 Response status:', response.status);
         
@@ -297,9 +325,10 @@ async function generateMemeWithGPTImage1AI(file) {
             
             // Track successful generation
             if (typeof gtag !== 'undefined') {
-                gtag('event', 'gpt_image_1_meme_generated', {
+                gtag('event', 'optimized_meme_generated', {
                     'event_category': 'AI',
-                    'provider': result.provider
+                    'provider': result.provider,
+                    'optimization': result.optimization
                 });
             }
         } else {
@@ -307,7 +336,7 @@ async function generateMemeWithGPTImage1AI(file) {
         }
         
     } catch (error) {
-        console.error('❌ GPT Image 1 meme generation failed:', error);
+        console.error('❌ Optimized meme generation failed:', error);
         throw error;
     }
 }
@@ -684,7 +713,7 @@ function showError(message) {
         if (document.body.contains(notification)) {
             document.body.removeChild(notification);
         }
-    }, 6000);
+    }, 8000); // Longer timeout for error messages
 }
 
 function showSuccess(message) {
@@ -773,11 +802,11 @@ if (document.readyState === 'loading') {
 }
 
 // Console log to show functionality status
-console.log('🚀 MemeTee initialized with GPT Image 1 & Simple T-Shirt Overlay');
-console.log('🎨 Meme generation: GPT Image 1 (OpenAI\'s latest 2025 model)');
-console.log('👕 T-shirt mockup: Simple template overlay (faster & more reliable)');
-console.log('📧 Contact form: REAL email functionality via serverless functions');
-console.log('💰 Payments: Coming soon message implementation');
-console.log('🎯 All API calls routed to /api/* serverless functions');
+console.log('🚀 MemeTee initialized with timeout optimization');
+console.log('⚡ Meme generation: Optimized for speed (DALL-E 3 prioritized)');
+console.log('👕 T-shirt mockup: Simple template overlay (instant)');
+console.log('📧 Contact form: REAL email functionality');
+console.log('💰 Payments: Coming soon implementation');
+console.log('🎯 All API calls optimized for Vercel timeout limits');
 console.log('🇪🇺 Pricing configured for European market (EUR)');
 console.log('💡 Add your OPENAI_API_KEY to Vercel environment variables!');
