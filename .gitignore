@@ -14,8 +14,8 @@ yarn-error.log*
 # Vercel
 .vercel
 
-# Backend (not needed for Vercel deployment)
-backend/
+# Test coverage
+coverage/
 
 # IDE
 .vscode/
@@ -40,4 +40,3 @@ logs
 *.backup
 *.bak
 *.old
-test-email.js

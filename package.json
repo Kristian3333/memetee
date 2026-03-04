@@ -4,15 +4,21 @@
   "description": "AI-powered meme t-shirt generator for Vercel",
   "main": "index.html",
   "scripts": {
-    "dev": "vercel dev"
+    "dev": "vercel dev",
+    "test": "jest --config jest.config.cjs",
+    "test:coverage": "jest --config jest.config.cjs --coverage"
   },
   "dependencies": {
-    "openai": "^4.20.1",
-    "replicate": "^0.22.0",
-    "nodemailer": "^6.9.8"
+    "nodemailer": "^6.9.8",
+    "openai": "^4.20.1"
   },
   "devDependencies": {
-    "@vercel/node": "^3.0.0"
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.0",
+    "@vercel/node": "^3.0.0",
+    "babel-jest": "^30.2.0",
+    "jest": "^30.2.0",
+    "jest-environment-jsdom": "^30.2.0"
   },
   "keywords": [
     "meme",
@@ -20,9 +26,7 @@
     "ai",
     "openai",
     "dalle",
-    "replicate",
-    "vercel",
-    "serverless"
+    "vercel"
   ],
   "author": "MemeTee",
   "license": "MIT"

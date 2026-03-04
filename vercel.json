@@ -3,20 +3,8 @@
     "api/generate-meme.js": {
       "maxDuration": 60
     },
-    "api/generate-tshirt-mockup.js": {
-      "maxDuration": 30
-    },
     "api/contact.js": {
       "maxDuration": 30
-    },
-    "api/process-order.js": {
-      "maxDuration": 30
     }
-  },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
-    }
-  ]
+  }
 }
