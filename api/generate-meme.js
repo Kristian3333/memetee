@@ -1,3 +1,5 @@
+import { GoogleGenAI, createUserContent, createPartFromBase64 } from '@google/genai';
+import { fal } from '@fal-ai/client';
 import OpenAI, { toFile } from 'openai';
 
 const rateLimitStore = new Map();
@@ -24,140 +26,296 @@ function checkRateLimit(ip) {
   return true;
 }
 
-async function generateDALLEPromptFromVision(imageBuffer) {
+const VISION_PROMPT = `Analyze this image. Describe a hilarious meme transformation of this photo.
+Output ONLY the image editing instruction — what should change to make this photo into a viral meme. Keep the person/subject recognizable but add meme elements.
+
+Examples of good outputs:
+- "Add dramatic laser eyes, a cape, and the text 'ME AFTER COFFEE' in bold Impact font at the top"
+- "Turn this into a Renaissance painting style with the text 'WHEN THE WIFI COMES BACK' in ornate gold lettering"
+- "Add explosion effects behind the person with aviator sunglasses and the text 'DEAL WITH IT'"
+
+Output format: Just the raw editing instruction, nothing else.`;
+
+async function analyzeImageWithGemini(imageBuffer) {
+  const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
+  const base64Image = imageBuffer.toString('base64');
+
+  const contents = createUserContent([
+    VISION_PROMPT,
+    createPartFromBase64(base64Image, 'image/jpeg'),
+  ]);
+
+  const response = await ai.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents,
+  });
+
+  return response.text.trim();
+}
+
+async function analyzeImageWithGrokVision(imageBuffer) {
+  const openai = new OpenAI({ apiKey: process.env.XAI_API_KEY, baseURL: 'https://api.x.ai/v1' });
+  const base64Image = imageBuffer.toString('base64');
+
+  const response = await openai.chat.completions.create({
+    model: 'grok-2-vision',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: VISION_PROMPT },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
+        ],
+      },
+    ],
+    max_tokens: 300,
+    temperature: 0.8,
+  });
+
+  return response.choices[0].message.content.trim();
+}
+
+async function analyzeImageWithGPT4oMini(imageBuffer) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const base64Image = imageBuffer.toString('base64');
 
-  try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Analyze this image and create a DALL-E prompt that will generate a hilarious internet meme based on what you see. The prompt should be funny, clever, and capture the essence of what makes this image meme-worthy.
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [
+      {
+        role: 'user',
+        content: [
+          { type: 'text', text: VISION_PROMPT },
+          { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
+        ],
+      },
+    ],
+    max_tokens: 300,
+    temperature: 0.8,
+  });
 
-Output ONLY the DALL-E prompt - no explanations, no descriptions, just the exact text that DALL-E should use to create the funniest possible meme.
-
-The prompt should include:
-- A funny concept that relates to what's happening in the image
-- Meme-style text overlay instructions
-- Instructions for viral, shareable humor
-- High quality image specifications
-
-Output format: Just the raw DALL-E prompt, nothing else.`,
-            },
-            {
-              type: 'image_url',
-              image_url: { url: `data:image/jpeg;base64,${base64Image}` },
-            },
-          ],
-        },
-      ],
-      max_tokens: 300,
-      temperature: 0.8,
-    });
-
-    return response.choices[0].message.content.trim();
-  } catch (error) {
-    console.error('Vision-to-DALL-E prompt generation failed:', error);
-    return 'A hilarious internet meme with bold text overlay, funny and clever, viral-worthy humor, high quality meme format';
-  }
+  return response.choices[0].message.content.trim();
 }
 
-async function generateMemeWithDALLE3Direct(visionPrompt) {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+async function generateVisionPrompt(imageBuffer) {
+  if (process.env.GOOGLE_AI_API_KEY) {
+    try {
+      return await analyzeImageWithGemini(imageBuffer);
+    } catch (error) {
+      console.error('Gemini vision failed:', error.message);
+    }
+  }
 
-  try {
-    const response = await openai.images.generate({
-      model: 'dall-e-3',
-      prompt: visionPrompt,
-      size: '1024x1024',
-      quality: 'hd',
-      style: 'vivid',
+  if (process.env.XAI_API_KEY) {
+    try {
+      return await analyzeImageWithGrokVision(imageBuffer);
+    } catch (error) {
+      console.error('Grok vision failed:', error.message);
+    }
+  }
+
+  if (process.env.OPENAI_API_KEY) {
+    return await analyzeImageWithGPT4oMini(imageBuffer);
+  }
+
+  return 'Add funny meme text overlay and visual effects to make this image hilarious and viral-worthy';
+}
+
+async function generateImageWithGrokEdit(imageBuffer, prompt) {
+  const base64Image = imageBuffer.toString('base64');
+
+  const response = await fetch('https://api.x.ai/v1/images/edits', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${process.env.XAI_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: 'grok-imagine-image',
+      prompt,
+      image: { url: `data:image/jpeg;base64,${base64Image}`, type: 'image_url' },
+      n: 1,
       response_format: 'url',
-      n: 1,
-    });
+    }),
+  });
 
-    return {
-      url: response.data[0].url,
-      provider: 'dall-e-3-vision-direct',
-      used_vision: true,
-    };
-  } catch (error) {
-    console.error('DALL-E 3 direct generation failed:', error);
-    throw error;
+  if (!response.ok) {
+    const errorBody = await response.text();
+    throw new Error(`xAI API error ${response.status}: ${errorBody}`);
   }
+
+  const result = await response.json();
+  if (!result.data?.[0]?.url) {
+    throw new Error('No image URL returned from Grok Imagine');
+  }
+
+  return { url: result.data[0].url, provider: 'grok-imagine', used_vision: true };
 }
 
-async function generateMemeWithGPTImage1Direct(visionPrompt) {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+async function generateImageWithFluxEdit(imageBuffer, prompt) {
+  fal.config({ credentials: process.env.FAL_KEY });
+  const base64Image = imageBuffer.toString('base64');
+  const dataUri = `data:image/jpeg;base64,${base64Image}`;
 
-  try {
-    const response = await openai.images.generate({
-      model: 'gpt-image-1',
-      prompt: visionPrompt,
-      size: '1024x1024',
-      quality: 'high',
-      background: 'auto',
-      output_format: 'png',
-      n: 1,
-    });
+  const result = await fal.subscribe('fal-ai/flux-2-pro/edit', {
+    input: {
+      prompt,
+      image_urls: [dataUri],
+      image_size: 'square_hd',
+      output_format: 'jpeg',
+      safety_tolerance: '5',
+    },
+  });
 
-    const imageBase64 = response.data[0].b64_json;
-
-    if (!imageBase64) {
-      throw new Error('No base64 image data returned from GPT Image 1');
-    }
-
-    return {
-      url: `data:image/png;base64,${imageBase64}`,
-      provider: 'gpt-image-1-vision-direct',
-      used_vision: true,
-    };
-  } catch (error) {
-    console.error('GPT Image 1 direct generation failed:', error);
-    throw error;
+  if (!result.data?.images?.[0]?.url) {
+    throw new Error('No image URL returned from FLUX 2 Pro edit');
   }
+
+  return { url: result.data.images[0].url, provider: 'flux-2-pro-edit', used_vision: true };
 }
 
-async function generateMemeWithGPTImage1Edit(imageBuffer, visionPrompt = null) {
+async function generateImageWithGPTImage1Edit(imageBuffer, prompt) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-  const memePrompt = visionPrompt ||
-    'Transform this image into a hilarious internet meme with bold, eye-catching text overlay and witty captions. Make it shareable, engaging, and perfect for social media. High quality meme format.';
+  const response = await openai.images.edit({
+    model: 'gpt-image-1',
+    image: await toFile(imageBuffer, 'image.png'),
+    prompt,
+    size: '1024x1024',
+  });
 
-  try {
-    const imageFile = await toFile(imageBuffer, 'input.png', { type: 'image/png' });
-
-    const response = await openai.images.edit({
-      model: 'gpt-image-1',
-      image: imageFile,
-      prompt: memePrompt,
-      size: '1024x1024',
-      quality: 'medium',
-      background: 'auto',
-      output_format: 'png',
-      n: 1,
-    });
-
-    const imageBase64 = response.data[0].b64_json;
-
-    if (!imageBase64) {
-      throw new Error('No base64 image data returned from GPT Image 1');
-    }
-
+  if (response.data[0].b64_json) {
     return {
-      url: `data:image/png;base64,${imageBase64}`,
-      provider: 'gpt-image-1-edit-vision',
-      used_vision: !!visionPrompt,
+      url: `data:image/png;base64,${response.data[0].b64_json}`,
+      provider: 'gpt-image-1-edit',
+      used_vision: true,
     };
-  } catch (error) {
-    console.error('GPT Image 1 image editing failed:', error);
-    throw error;
   }
+
+  if (response.data[0].url) {
+    return { url: response.data[0].url, provider: 'gpt-image-1-edit', used_vision: true };
+  }
+
+  throw new Error('No image data returned from GPT Image 1 edit');
+}
+
+async function generateImage(imageBuffer, prompt) {
+  const errors = [];
+
+  if (process.env.XAI_API_KEY) {
+    try {
+      return await generateImageWithGrokEdit(imageBuffer, prompt);
+    } catch (error) {
+      console.error('Grok edit failed:', error.message);
+      errors.push(error);
+    }
+  }
+
+  if (process.env.FAL_KEY) {
+    try {
+      return await generateImageWithFluxEdit(imageBuffer, prompt);
+    } catch (error) {
+      console.error('FLUX 2 Pro edit failed:', error.message);
+      errors.push(error);
+    }
+  }
+
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      return await generateImageWithGPTImage1Edit(imageBuffer, prompt);
+    } catch (error) {
+      console.error('GPT Image 1 edit failed:', error.message);
+      errors.push(error);
+    }
+  }
+
+  throw errors.length > 0 ? errors[errors.length - 1] : new Error('No AI image generation service configured');
+}
+
+async function generateImageWithGrokText(prompt) {
+  const openai = new OpenAI({ apiKey: process.env.XAI_API_KEY, baseURL: 'https://api.x.ai/v1' });
+
+  const response = await openai.images.generate({
+    model: 'grok-imagine-image',
+    prompt,
+    n: 1,
+    response_format: 'url',
+  });
+
+  if (!response.data?.[0]?.url) {
+    throw new Error('No image URL returned from Grok Imagine');
+  }
+
+  return { url: response.data[0].url, provider: 'grok-imagine', used_vision: false };
+}
+
+async function generateImageWithFluxText(prompt) {
+  fal.config({ credentials: process.env.FAL_KEY });
+
+  const result = await fal.subscribe('fal-ai/flux/dev', {
+    input: {
+      prompt,
+      image_size: { width: 1024, height: 1024 },
+      num_inference_steps: 28,
+      num_images: 1,
+      output_format: 'jpeg',
+    },
+  });
+
+  if (!result.data?.images?.[0]?.url) {
+    throw new Error('No image URL returned from FLUX');
+  }
+
+  return { url: result.data.images[0].url, provider: 'flux-dev', used_vision: false };
+}
+
+async function generateImageWithDALLE3(prompt) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+  const response = await openai.images.generate({
+    model: 'dall-e-3',
+    prompt,
+    size: '1024x1024',
+    quality: 'standard',
+    style: 'vivid',
+    response_format: 'url',
+    n: 1,
+  });
+
+  return { url: response.data[0].url, provider: 'dall-e-3', used_vision: false };
+}
+
+async function generateImageFromText(prompt) {
+  const errors = [];
+
+  if (process.env.XAI_API_KEY) {
+    try {
+      return await generateImageWithGrokText(prompt);
+    } catch (error) {
+      console.error('Grok text-to-image failed:', error.message);
+      errors.push(error);
+    }
+  }
+
+  if (process.env.FAL_KEY) {
+    try {
+      return await generateImageWithFluxText(prompt);
+    } catch (error) {
+      console.error('FLUX text-to-image failed:', error.message);
+      errors.push(error);
+    }
+  }
+
+  if (process.env.OPENAI_API_KEY) {
+    try {
+      return await generateImageWithDALLE3(prompt);
+    } catch (error) {
+      console.error('DALL-E 3 failed:', error.message);
+      errors.push(error);
+    }
+  }
+
+  throw errors.length > 0 ? errors[errors.length - 1] : new Error('No AI image generation service configured');
 }
 
 function generateFallbackMemePrompt(userPrompt, style = 'meme') {
@@ -196,10 +354,11 @@ export default async function handler(req, res) {
 
     const { image, prompt, style } = req.body;
 
-    if (!process.env.OPENAI_API_KEY) {
+    const hasAnyProvider = process.env.XAI_API_KEY || process.env.GOOGLE_AI_API_KEY || process.env.FAL_KEY || process.env.OPENAI_API_KEY;
+    if (!hasAnyProvider) {
       return res.status(503).json({
         success: false,
-        error: 'OpenAI API key not configured. Please add OPENAI_API_KEY to environment variables.',
+        error: 'No AI service configured. Please add XAI_API_KEY, GOOGLE_AI_API_KEY, FAL_KEY, or OPENAI_API_KEY to environment variables.',
         code: 'SERVICE_UNAVAILABLE',
       });
     }
@@ -217,32 +376,15 @@ export default async function handler(req, res) {
           return res.status(400).json({ success: false, error: 'Image too large. Maximum size is 10MB.' });
         }
 
-        visionPrompt = await generateDALLEPromptFromVision(imageBuffer);
+        visionPrompt = await generateVisionPrompt(imageBuffer);
       } catch (error) {
         return res.status(400).json({ success: false, error: 'Invalid image format' });
       }
 
-      try {
-        result = await generateMemeWithDALLE3Direct(visionPrompt);
-      } catch (error) {
-        try {
-          result = await generateMemeWithGPTImage1Direct(visionPrompt);
-        } catch (error) {
-          try {
-            result = await generateMemeWithGPTImage1Edit(imageBuffer, visionPrompt);
-          } catch (error) {
-            result = await generateMemeWithGPTImage1Edit(imageBuffer);
-          }
-        }
-      }
+      result = await generateImage(imageBuffer, visionPrompt);
     } else {
       const enhancedPrompt = generateFallbackMemePrompt(prompt, style || 'meme');
-
-      try {
-        result = await generateMemeWithDALLE3Direct(enhancedPrompt);
-      } catch (error) {
-        result = await generateMemeWithGPTImage1Direct(enhancedPrompt);
-      }
+      result = await generateImageFromText(enhancedPrompt);
     }
 
     if (!result) {
@@ -269,7 +411,7 @@ export default async function handler(req, res) {
     if (error.message.includes('quota') || error.message.includes('billing')) {
       return res.status(402).json({
         success: false,
-        error: 'OpenAI API quota exceeded. Please check your billing or try again later.',
+        error: 'AI API quota exceeded. Please check your billing or try again later.',
         code: 'QUOTA_EXCEEDED',
       });
     }
@@ -283,14 +425,14 @@ export default async function handler(req, res) {
     if (error.message.includes('not configured') || error.message.includes('API key')) {
       return res.status(503).json({
         success: false,
-        error: 'OpenAI service not configured. Please add OPENAI_API_KEY to environment variables.',
+        error: 'AI service not configured. Please add API keys to environment variables.',
         code: 'SERVICE_UNAVAILABLE',
       });
     }
     if (error.message.includes('organization') || error.message.includes('verification')) {
       return res.status(403).json({
         success: false,
-        error: 'OpenAI organization verification required for GPT Image 1. Please verify your organization at https://platform.openai.com/settings/organization/general',
+        error: 'AI provider organization verification required.',
         code: 'VERIFICATION_REQUIRED',
       });
     }

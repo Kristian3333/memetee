@@ -1,14 +1,14 @@
 # MemeTee Landing Page
 
 ## Overview
-AI-powered meme t-shirt generator. Users upload photos, the app creates hilarious memes using a two-stage AI pipeline (GPT-4o Vision analysis + DALL-E 3 generation), displays realistic t-shirt mockups, and allows ordering (coming soon, EUR 22.99). Includes contact form for launch notifications.
+AI-powered meme t-shirt generator. Users upload photos, the app creates hilarious memes using a two-stage AI pipeline (Gemini 2.5 Flash vision analysis + Grok Imagine image-to-image editing via xAI), displays realistic t-shirt mockups, and allows ordering (coming soon, EUR 22.99). Includes contact form for launch notifications. FLUX 2 Pro edit (fal.ai) and GPT Image 1 edit (OpenAI) serve as fallbacks.
 
 ## Tech Stack
 - Language: JavaScript (Node.js)
 - Frontend: HTML5, CSS3, vanilla JavaScript, GSAP 3.12.2 (animations)
 - Backend: Express.js, Vercel Serverless Functions
-- AI: OpenAI (GPT-4o Vision, DALL-E 3, GPT Image 1)
-- Alternative AI: Replicate
+- AI (primary): Google Gemini 2.5 Flash (vision), xAI Grok Imagine (img2img generation)
+- AI (fallback): FLUX 2 Pro edit via fal.ai, GPT Image 1 edit via OpenAI
 - Image Processing: Sharp
 - Email: Nodemailer
 - Payments: Stripe (future)
@@ -22,7 +22,7 @@ Static HTML frontend with Vercel serverless API functions. Separate Express back
 - script.js — Frontend logic (2200+ lines)
 - styles.css — Styling with animations
 - config.js — Global config (API endpoints, pricing, AI settings, feature flags)
-- api/generate-meme.js — Main feature: GPT-4o vision then DALL-E prompt then meme generation
+- api/generate-meme.js — Main feature: Gemini vision → Grok Imagine img2img edit (fallback: FLUX 2 Pro edit → GPT Image 1 edit)
 - api/generate-tshirt-mockup.js — T-shirt mockup creation
 - api/contact.js — Contact form handler (Nodemailer)
 - api/process-order.js — Order processing
@@ -34,7 +34,7 @@ Static HTML frontend with Vercel serverless API functions. Separate Express back
 - Frontend is vanilla HTML/CSS/JS (no framework)
 - Config centralized in config.js
 - Rate limiting: 3 requests per 5-minute window per IP
-- AI fallbacks: DALL-E 3 then GPT Image 1 then Image Editing
+- AI fallbacks: Gemini → Grok vision → GPT-4o Mini (vision); Grok Imagine edit → FLUX 2 Pro edit → GPT Image 1 edit (image gen)
 - Belgium/Europe focused (EUR pricing)
 
 ## Engineering Standards

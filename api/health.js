@@ -9,14 +9,17 @@ export default async function handler(req, res) {
     return;
   }
 
+  const xaiConfigured = !!process.env.XAI_API_KEY;
+  const geminiConfigured = !!process.env.GOOGLE_AI_API_KEY;
+  const falConfigured = !!process.env.FAL_KEY;
   const openaiConfigured = !!process.env.OPENAI_API_KEY;
 
   res.status(200).json({
     status: 'OK',
     timestamp: new Date().toISOString(),
     capabilities: {
-      vision: openaiConfigured,
-      meme: openaiConfigured,
+      vision: geminiConfigured || xaiConfigured || openaiConfigured,
+      meme: xaiConfigured || falConfigured || openaiConfigured,
       email: !!(
         (process.env.EMAIL_SERVICE === 'gmail' && process.env.GMAIL_USER && process.env.GMAIL_APP_PASSWORD) ||
         (process.env.EMAIL_SERVICE === 'sendgrid' && process.env.SENDGRID_API_KEY) ||
@@ -24,6 +27,9 @@ export default async function handler(req, res) {
       ),
     },
     services: {
+      xai: xaiConfigured,
+      gemini: geminiConfigured,
+      fal: falConfigured,
       openai: openaiConfigured,
       gmail: !!(process.env.EMAIL_SERVICE === 'gmail' && process.env.GMAIL_USER),
       sendgrid: !!(process.env.EMAIL_SERVICE === 'sendgrid' && process.env.SENDGRID_API_KEY),
