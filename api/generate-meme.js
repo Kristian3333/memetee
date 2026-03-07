@@ -1,4 +1,4 @@
-import { GoogleGenAI, createUserContent, createPartFromBase64 } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { fal } from '@fal-ai/client';
 import OpenAI, { toFile } from 'openai';
 
@@ -37,20 +37,16 @@ Examples of good outputs:
 Output format: Just the raw editing instruction, nothing else.`;
 
 async function analyzeImageWithGemini(imageBuffer) {
-  const ai = new GoogleGenAI({ apiKey: process.env.GOOGLE_AI_API_KEY });
+  const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   const base64Image = imageBuffer.toString('base64');
 
-  const contents = createUserContent([
+  const result = await model.generateContent([
     VISION_PROMPT,
-    createPartFromBase64(base64Image, 'image/jpeg'),
+    { inlineData: { data: base64Image, mimeType: 'image/jpeg' } },
   ]);
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents,
-  });
-
-  return response.text.trim();
+  return result.response.text().trim();
 }
 
 async function analyzeImageWithGrokVision(imageBuffer) {
