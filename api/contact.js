@@ -45,6 +45,15 @@ function validateInput(data) {
   return null;
 }
 
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 function createEmailTransporter() {
   if (process.env.EMAIL_SERVICE === 'gmail') {
     return nodemailer.createTransporter({
@@ -127,14 +136,18 @@ export default async function handler(req, res) {
       });
     }
 
+    const safeName = escapeHtml(name);
+    const safeEmail = escapeHtml(email);
+    const safeMessage = escapeHtml(message);
+
     const customerEmailHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
         <h2 style="color: #667eea;">Thank you for contacting MemeTee!</h2>
-        <p>Hi ${name},</p>
+        <p>Hi ${safeName},</p>
         <p>We've received your message and will get back to you within 24 hours.</p>
         <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
           <h3>Your Message:</h3>
-          <p><em>"${message}"</em></p>
+          <p><em>"${safeMessage}"</em></p>
         </div>
         <p>Best regards,<br>The MemeTee Team</p>
       </div>
@@ -145,16 +158,16 @@ export default async function handler(req, res) {
         <h2 style="color: #ff6b6b;">New Contact Form Submission</h2>
         <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px 0;">
           <h3>Customer Details:</h3>
-          <p><strong>Name:</strong> ${name}</p>
-          <p><strong>Email:</strong> ${email}</p>
+          <p><strong>Name:</strong> ${safeName}</p>
+          <p><strong>Email:</strong> ${safeEmail}</p>
           <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
           <p><strong>IP:</strong> ${ip}</p>
         </div>
         <div style="background: #fff3cd; padding: 20px; border-radius: 10px; margin: 20px 0;">
           <h3>Message:</h3>
-          <p>"${message}"</p>
+          <p>"${safeMessage}"</p>
         </div>
-        <p><strong>Action Required:</strong> Please respond to ${email} within 24 hours.</p>
+        <p><strong>Action Required:</strong> Please respond to ${safeEmail} within 24 hours.</p>
       </div>
     `;
 

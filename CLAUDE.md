@@ -5,35 +5,33 @@ AI-powered meme t-shirt generator. Users upload photos, the app creates hilariou
 
 ## Tech Stack
 - Language: JavaScript (Node.js)
-- Frontend: HTML5, CSS3, vanilla JavaScript, GSAP 3.12.2 (animations)
-- Backend: Express.js, Vercel Serverless Functions
+- Frontend: HTML5, CSS3, vanilla JavaScript (ES modules in src/)
+- Backend: Vercel Serverless Functions
 - AI (primary): Google Gemini 2.5 Flash (vision), xAI Grok Imagine (img2img generation)
 - AI (fallback): FLUX 2 Pro edit via fal.ai, GPT Image 1 edit via OpenAI
-- Image Processing: Sharp
 - Email: Nodemailer
 - Payments: Stripe (future)
-- Security: Helmet, rate-limiter-flexible, Joi (validation)
 - Testing: Jest
 - Build: Vercel deployment
 
 ## Architecture
-Static HTML frontend with Vercel serverless API functions. Separate Express backend for development.
+Static HTML frontend with Vercel serverless API functions. Frontend uses modular ES modules in src/.
 - index.html — Main landing page
-- script.js — Frontend logic (2200+ lines)
-- styles.css — Styling with animations
-- config.js — Global config (API endpoints, pricing, AI settings, feature flags)
-- api/generate-meme.js — Main feature: Gemini vision → Grok Imagine img2img edit (fallback: FLUX 2 Pro edit → GPT Image 1 edit)
-- api/generate-tshirt-mockup.js — T-shirt mockup creation
+- src/app.js — Entry point: wires upload, generator, display, contact, notify modules
+- src/upload.js — File upload validation and drag-drop setup
+- src/generator.js — AI meme generation pipeline (base64 conversion, API call, 45s timeout)
+- src/display.js — DOM rendering for meme results and CSS t-shirt mockup
+- src/contact.js — Contact form validation and API submission
+- src/notify.js — Toast notification system
+- styles.css — Styling with CSS t-shirt mockup
+- api/generate-meme.js — Gemini vision → Grok Imagine img2img edit (fallback: FLUX 2 Pro edit → GPT Image 1 edit)
 - api/contact.js — Contact form handler (Nodemailer)
-- api/process-order.js — Order processing
-- api/health.js — Health check
-- backend/ — Alternative Express.js backend for development
+- api/health.js — Health check with service status
 
 ## Key Conventions
 - Serverless functions in api/
 - Frontend is vanilla HTML/CSS/JS (no framework)
-- Config centralized in config.js
-- Rate limiting: 3 requests per 5-minute window per IP
+- Rate limiting: 3 requests per 5-minute window per IP (meme), 2 per 5 min (contact)
 - AI fallbacks: Gemini → Grok vision → GPT-4o Mini (vision); Grok Imagine edit → FLUX 2 Pro edit → GPT Image 1 edit (image gen)
 - Belgium/Europe focused (EUR pricing)
 
@@ -57,9 +55,9 @@ This project follows strict TDD. The workflow is ALWAYS:
 ### Security
 - Never hardcode secrets, API keys, tokens, or credentials anywhere
 - All secrets via environment variables (.env)
-- Validate and sanitize ALL external input (Joi validation)
+- Validate and sanitize ALL external input
+- HTML-escape user input in email templates
 - Rate limiting on all public-facing endpoints
-- Helmet for security headers
 - No dynamic code execution from external input
 
 ### Code Quality
@@ -80,10 +78,13 @@ This project follows strict TDD. The workflow is ALWAYS:
 ## Common Commands
 - `vercel dev` — Run Vercel dev server
 - `vercel --prod` — Deploy to production
-- `cd backend && npm run dev` — Run Express backend locally
-- `cd backend && npm test` — Run tests
+- `npm test` — Run tests
 - `npm install` — Install dependencies
 
 ## Current Status
-<!-- Update this section at the end of each work session -->
-- [ ] Initial project setup
+- [x] Meme generator (upload → AI vision → img2img → display)
+- [x] CSS t-shirt mockup preview
+- [x] Contact form with email notifications
+- [x] Health check endpoint
+- [ ] Order processing (api/process-order.js — planned)
+- [ ] Stripe payment integration (planned)

@@ -73,15 +73,18 @@ function buildDOM() {
 
   const nameInput = document.createElement('input');
   nameInput.type = 'text';
+  nameInput.name = 'name';
   nameInput.placeholder = 'Name';
   form.appendChild(nameInput);
 
   const emailInput = document.createElement('input');
   emailInput.type = 'email';
+  emailInput.name = 'email';
   emailInput.placeholder = 'Email';
   form.appendChild(emailInput);
 
   const textarea = document.createElement('textarea');
+  textarea.name = 'message';
   textarea.placeholder = 'Message';
   form.appendChild(textarea);
 
@@ -252,10 +255,9 @@ describe('handleContactSubmit (via form submit)', () => {
     init();
 
     const form = document.getElementById('contact-form');
-    const inputs = form.querySelectorAll('input, textarea');
-    inputs[0].value = 'John';
-    inputs[1].value = 'john@test.com';
-    inputs[2].value = 'Hello world!';
+    form.elements.name.value = 'John';
+    form.elements.email.value = 'john@test.com';
+    form.elements.message.value = 'Hello world!';
 
     const event = new Event('submit', { cancelable: true });
     form.dispatchEvent(event);
@@ -297,10 +299,9 @@ describe('handleContactSubmit (via form submit)', () => {
     init();
 
     const form = document.getElementById('contact-form');
-    const inputs = form.querySelectorAll('input, textarea');
-    inputs[0].value = 'John';
-    inputs[1].value = 'john@test.com';
-    inputs[2].value = 'Hello world!';
+    form.elements.name.value = 'John';
+    form.elements.email.value = 'john@test.com';
+    form.elements.message.value = 'Hello world!';
 
     const event = new Event('submit', { cancelable: true });
     form.dispatchEvent(event);

@@ -86,10 +86,9 @@ async function handleGeneration(file, els) {
 async function handleContactSubmit(event, form) {
   event.preventDefault();
 
-  const inputs = form.querySelectorAll('input, textarea');
-  const name = inputs[0].value.trim();
-  const email = inputs[1].value.trim();
-  const message = inputs[2].value.trim();
+  const name = form.elements.name.value.trim();
+  const email = form.elements.email.value.trim();
+  const message = form.elements.message.value.trim();
 
   const validation = validateContactForm({ name, email, message });
   if (!validation.valid) {
