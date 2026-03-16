@@ -190,7 +190,7 @@ async function generateImageWithFluxEdit(imageBuffer, prompt) {
 
 async function generateImageWithDallE2Edit(imageBuffer, prompt) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const pngBuffer = await sharp(imageBuffer).png().toBuffer();
+  const pngBuffer = await sharp(imageBuffer).ensureAlpha().png().toBuffer();
 
   const response = await openai.images.edit({
     model: 'dall-e-2',
