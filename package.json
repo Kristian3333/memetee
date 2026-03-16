@@ -12,7 +12,7 @@
     "@fal-ai/client": "^1.9.4",
     "@google/generative-ai": "^0.24.1",
     "nodemailer": "^6.9.8",
-    "openai": "^4.20.1"
+    "openai": "^6.29.0"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
