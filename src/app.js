@@ -35,6 +35,30 @@ function setStepStatus(stepEl, status) {
 }
 
 /**
+ * Returns the currently selected meme style from the style chips.
+ *
+ * @returns {string} The data-style value of the active chip, or 'funny' as default.
+ */
+function getSelectedStyle() {
+  const active = document.querySelector('.style-chip.active');
+  return active ? active.dataset.style : 'funny';
+}
+
+/**
+ * Wires click handlers on style chips so only one is active at a time.
+ *
+ * @param {HTMLElement} container - The element containing the style chips.
+ */
+function setupStyleSelector(container) {
+  container.addEventListener('click', (e) => {
+    const chip = e.target.closest('.style-chip');
+    if (!chip) return;
+    container.querySelectorAll('.style-chip').forEach((c) => c.classList.remove('active'));
+    chip.classList.add('active');
+  });
+}
+
+/**
  * Handles the full meme generation flow after a file is selected.
  *
  * @param {File} file - The uploaded image file.
@@ -58,7 +82,8 @@ async function handleGeneration(file, els) {
     setStepStatus(els.step1, 'completed');
     setStepStatus(els.step2, 'active');
 
-    const result = await generateMeme(file);
+    const style = getSelectedStyle();
+    const result = await generateMeme(file, style);
 
     setStepStatus(els.step2, 'completed');
     setStepStatus(els.step3, 'active');
@@ -130,6 +155,9 @@ export function init() {
     onFile: (file) => handleGeneration(file, els),
     onError: (msg) => showNotification(msg, 'error'),
   });
+
+  const styleOptions = document.getElementById('style-options');
+  if (styleOptions) setupStyleSelector(styleOptions);
 
   const contactForm = requireElement('contact-form');
   contactForm.addEventListener('submit', (e) => handleContactSubmit(e, contactForm));

@@ -26,7 +26,23 @@ function checkRateLimit(ip) {
   return true;
 }
 
-const VISION_PROMPT = `Analyze this image. Describe a hilarious meme transformation of this photo.
+const STYLE_GUIDES = {
+  funny: 'Classic internet humor — relatable, lighthearted, and shareable.',
+  sarcastic: 'Dry wit, irony, and deadpan commentary. Think "Oh great, another Monday."',
+  wholesome: 'Warm, positive, feel-good humor. Uplifting and heartwarming.',
+  dark: 'Edgy dark humor — unexpected, morbid twists. Push boundaries but stay clever.',
+  political: 'Political satire and social commentary. Sharp, opinionated, topical.',
+  absurd: 'Surreal, random, nonsensical humor. The weirder the better. Shitpost energy.',
+  roast: 'Savage roast of the person/subject in the photo. Brutally funny but playful.',
+};
+
+function buildVisionPrompt(style) {
+  const styleGuide = STYLE_GUIDES[style] || STYLE_GUIDES.funny;
+
+  return `Analyze this image. Describe a meme transformation of this photo.
+
+Humor style: ${styleGuide}
+
 Output ONLY the image editing instruction — what should change to make this photo into a viral meme. Keep the person/subject recognizable but add meme elements.
 
 Examples of good outputs:
@@ -35,21 +51,22 @@ Examples of good outputs:
 - "Add explosion effects behind the person with aviator sunglasses and the text 'DEAL WITH IT'"
 
 Output format: Just the raw editing instruction, nothing else.`;
+}
 
-async function analyzeImageWithGemini(imageBuffer) {
+async function analyzeImageWithGemini(imageBuffer, visionPrompt) {
   const genAI = new GoogleGenerativeAI(process.env.GOOGLE_AI_API_KEY);
   const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
   const base64Image = imageBuffer.toString('base64');
 
   const result = await model.generateContent([
-    VISION_PROMPT,
+    visionPrompt,
     { inlineData: { data: base64Image, mimeType: 'image/jpeg' } },
   ]);
 
   return result.response.text().trim();
 }
 
-async function analyzeImageWithGrokVision(imageBuffer) {
+async function analyzeImageWithGrokVision(imageBuffer, visionPrompt) {
   const openai = new OpenAI({ apiKey: process.env.XAI_API_KEY, baseURL: 'https://api.x.ai/v1' });
   const base64Image = imageBuffer.toString('base64');
 
@@ -59,7 +76,7 @@ async function analyzeImageWithGrokVision(imageBuffer) {
       {
         role: 'user',
         content: [
-          { type: 'text', text: VISION_PROMPT },
+          { type: 'text', text: visionPrompt },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
         ],
       },
@@ -71,7 +88,7 @@ async function analyzeImageWithGrokVision(imageBuffer) {
   return response.choices[0].message.content.trim();
 }
 
-async function analyzeImageWithGPT4oMini(imageBuffer) {
+async function analyzeImageWithGPT4oMini(imageBuffer, visionPrompt) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
   const base64Image = imageBuffer.toString('base64');
 
@@ -81,7 +98,7 @@ async function analyzeImageWithGPT4oMini(imageBuffer) {
       {
         role: 'user',
         content: [
-          { type: 'text', text: VISION_PROMPT },
+          { type: 'text', text: visionPrompt },
           { type: 'image_url', image_url: { url: `data:image/jpeg;base64,${base64Image}` } },
         ],
       },
@@ -93,10 +110,10 @@ async function analyzeImageWithGPT4oMini(imageBuffer) {
   return response.choices[0].message.content.trim();
 }
 
-async function generateVisionPrompt(imageBuffer) {
+async function generateVisionPrompt(imageBuffer, visionPrompt) {
   if (process.env.GOOGLE_AI_API_KEY) {
     try {
-      return await analyzeImageWithGemini(imageBuffer);
+      return await analyzeImageWithGemini(imageBuffer, visionPrompt);
     } catch (error) {
       console.error('Gemini vision failed:', error.message);
     }
@@ -104,14 +121,14 @@ async function generateVisionPrompt(imageBuffer) {
 
   if (process.env.XAI_API_KEY) {
     try {
-      return await analyzeImageWithGrokVision(imageBuffer);
+      return await analyzeImageWithGrokVision(imageBuffer, visionPrompt);
     } catch (error) {
       console.error('Grok vision failed:', error.message);
     }
   }
 
   if (process.env.OPENAI_API_KEY) {
-    return await analyzeImageWithGPT4oMini(imageBuffer);
+    return await analyzeImageWithGPT4oMini(imageBuffer, visionPrompt);
   }
 
   return 'Add funny meme text overlay and visual effects to make this image hilarious and viral-worthy';
@@ -372,7 +389,8 @@ export default async function handler(req, res) {
           return res.status(400).json({ success: false, error: 'Image too large. Maximum size is 10MB.' });
         }
 
-        visionPrompt = await generateVisionPrompt(imageBuffer);
+        const styledPrompt = buildVisionPrompt(style);
+        visionPrompt = await generateVisionPrompt(imageBuffer, styledPrompt);
       } catch (error) {
         return res.status(400).json({ success: false, error: 'Invalid image format' });
       }

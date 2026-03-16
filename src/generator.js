@@ -53,10 +53,11 @@ export function fileToBase64(file) {
  * The request is automatically aborted after 45 seconds.
  *
  * @param {File} file - The photo to turn into a meme.
+ * @param {string} [style] - Optional meme style/tone (e.g. 'funny', 'dark', 'political').
  * @returns {Promise<{ memeUrl: string, provider: string, visionPrompt: string }>}
  * @throws {Error} On network failure, API error, or timeout.
  */
-export async function generateMeme(file) {
+export async function generateMeme(file, style) {
   // Create the AbortController synchronously so the timeout is registered
   // immediately. This ensures jest.advanceTimersByTime() in tests can fire
   // the abort even before the async fileToBase64 step completes.
@@ -76,7 +77,7 @@ export async function generateMeme(file) {
     const response = await fetch('/api/generate-meme', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: base64Data }),
+      body: JSON.stringify({ image: base64Data, style: style || undefined }),
       signal: controller.signal,
     });
 

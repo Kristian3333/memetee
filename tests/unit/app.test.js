@@ -67,6 +67,16 @@ function buildDOM() {
 
   document.body.appendChild(preview);
 
+  // style selector
+  const styleOptions = document.createElement('div');
+  styleOptions.id = 'style-options';
+  const chip = document.createElement('button');
+  chip.className = 'style-chip active';
+  chip.dataset.style = 'funny';
+  chip.textContent = 'Funny';
+  styleOptions.appendChild(chip);
+  document.body.appendChild(styleOptions);
+
   // contact form
   const form = document.createElement('form');
   form.id = 'contact-form';
@@ -181,7 +191,7 @@ describe('handleGeneration (via onFile callback)', () => {
     const fakeFile = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
     await onFile(fakeFile);
 
-    expect(generateMeme).toHaveBeenCalledWith(fakeFile);
+    expect(generateMeme).toHaveBeenCalledWith(fakeFile, 'funny');
     expect(showMeme).toHaveBeenCalled();
     expect(showTshirt).toHaveBeenCalled();
     expect(showResults).toHaveBeenCalled();
