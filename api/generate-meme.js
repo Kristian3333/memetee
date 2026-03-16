@@ -187,11 +187,11 @@ async function generateImageWithFluxEdit(imageBuffer, prompt) {
   return { url: result.data.images[0].url, provider: 'flux-2-pro-edit', used_vision: true };
 }
 
-async function generateImageWithGPTImage1Edit(imageBuffer, prompt) {
+async function generateImageWithDallE2Edit(imageBuffer, prompt) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const response = await openai.images.edit({
-    model: 'gpt-image-1',
+    model: 'dall-e-2',
     image: await toFile(imageBuffer, 'image.png'),
     prompt,
     size: '1024x1024',
@@ -200,16 +200,16 @@ async function generateImageWithGPTImage1Edit(imageBuffer, prompt) {
   if (response.data[0].b64_json) {
     return {
       url: `data:image/png;base64,${response.data[0].b64_json}`,
-      provider: 'gpt-image-1-edit',
+      provider: 'dall-e-2-edit',
       used_vision: true,
     };
   }
 
   if (response.data[0].url) {
-    return { url: response.data[0].url, provider: 'gpt-image-1-edit', used_vision: true };
+    return { url: response.data[0].url, provider: 'dall-e-2-edit', used_vision: true };
   }
 
-  throw new Error('No image data returned from GPT Image 1 edit');
+  throw new Error('No image data returned from DALL-E 2 edit');
 }
 
 async function generateImage(imageBuffer, prompt) {
@@ -235,9 +235,9 @@ async function generateImage(imageBuffer, prompt) {
 
   if (process.env.OPENAI_API_KEY) {
     try {
-      return await generateImageWithGPTImage1Edit(imageBuffer, prompt);
+      return await generateImageWithDallE2Edit(imageBuffer, prompt);
     } catch (error) {
-      console.error('GPT Image 1 edit failed:', error.message);
+      console.error('DALL-E 2 edit failed:', error.message);
       errors.push(error);
     }
   }
