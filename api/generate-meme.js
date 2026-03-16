@@ -1,6 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { fal } from '@fal-ai/client';
 import OpenAI, { toFile } from 'openai';
+import sharp from 'sharp';
 
 const rateLimitStore = new Map();
 
@@ -189,10 +190,11 @@ async function generateImageWithFluxEdit(imageBuffer, prompt) {
 
 async function generateImageWithDallE2Edit(imageBuffer, prompt) {
   const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+  const pngBuffer = await sharp(imageBuffer).png().toBuffer();
 
   const response = await openai.images.edit({
     model: 'dall-e-2',
-    image: await toFile(imageBuffer, 'image.png'),
+    image: await toFile(pngBuffer, 'image.png', { type: 'image/png' }),
     prompt,
     size: '1024x1024',
   });
